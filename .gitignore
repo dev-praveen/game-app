@@ -39,3 +39,8 @@ temp/
 
 # Debug files
 .debug/
+
+# Database
+*.db
+db/*.db
+*.db-journal
