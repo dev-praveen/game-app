@@ -154,43 +154,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to generate the betting grid structure AND populate it
     function populateBettingGrid() {
-        bettingGridBody.innerHTML = ''; // Clear existing grid rows
+        bettingGridBody.innerHTML = '';
 
-        // --- Create Grid Structure ---
         // SD Row (Single Digit)
         const sdRow = bettingGridBody.insertRow();
         const sdHeaderCell = sdRow.insertCell();
-        sdHeaderCell.outerHTML = '<th>SD</th>'; // Use th for header cell
+        sdHeaderCell.outerHTML = '<th>SD</th>';
         for (let i = 0; i < 10; i++) {
             const cell = sdRow.insertCell();
-            cell.id = `grid-sd-${i}`; // ID for single digit bets
-            cell.textContent = ''; // Initially empty
+            cell.id = `grid-sd-${i}`;
+            cell.innerHTML = `<span class="cell-amount"></span>`; // No number display for SD
         }
 
         // DD Rows (Double Digit 00-99)
-        for (let i = 0; i < 10; i++) { // Tens digit (0-9)
+        for (let i = 0; i < 10; i++) {
             const row = bettingGridBody.insertRow();
             const headerCell = row.insertCell();
-            headerCell.outerHTML = `<th>${i}</th>`; // Row header (tens digit)
-            for (let j = 0; j < 10; j++) { // Units digit (0-9)
+            headerCell.outerHTML = `<th>${i}</th>`;
+            for (let j = 0; j < 10; j++) {
                 const cell = row.insertCell();
                 const number = `${i}${j}`;
-                cell.id = `grid-dd-${number}`; // ID for double digit bets
-                cell.textContent = ''; // Initially empty
+                cell.id = `grid-dd-${number}`;
+                cell.innerHTML = `<span class="cell-number"></span><span class="cell-amount"></span>`;
             }
         }
 
-        // --- Populate Grid with Bet Data ---
+        // Populate Grid with Bet Data
         console.log("Populating grid with bets:", bets);
         bets.forEach(bet => {
             const cellId = bet.bet_type === 'SD'
                 ? `grid-sd-${bet.number}`
-                : `grid-dd-${bet.number.padStart(2, '0')}`; // Ensure DD number is 2 digits for ID
+                : `grid-dd-${bet.number.padStart(2, '0')}`;
             const cell = document.getElementById(cellId);
             if (cell) {
-                const currentAmount = parseFloat(cell.textContent) || 0;
-                // Display sum, maybe format later if needed
-                cell.textContent = currentAmount + bet.amount;
+                // Show the number only for DD bets
+                if (bet.bet_type === 'DD') {
+                    const numberSpan = cell.querySelector('.cell-number');
+                    numberSpan.textContent = bet.number;
+                }
+                
+                const amountSpan = cell.querySelector('.cell-amount');
+                const currentAmount = parseFloat(amountSpan.textContent) || 0;
+                amountSpan.textContent = currentAmount + bet.amount;
             } else {
                 console.warn(`Cell with ID ${cellId} not found for bet:`, bet);
             }
