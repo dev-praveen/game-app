@@ -1,0 +1,199 @@
+body {
+    font-family: sans-serif;
+    margin: 20px;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+h1, h2 {
+    color: #343a40;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.management-section {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 30px;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.management-card {
+    flex: 1;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 10px;
+}
+
+.input-group label {
+    min-width: 120px; /* Adjust as needed */
+    font-weight: bold;
+}
+
+
+input[type="text"],
+input[type="number"],
+select {
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    flex-grow: 1;
+    font-size: 1rem;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s ease;
+}
+
+#add-game-btn,
+#add-customer-btn,
+#add-bet-btn {
+    background-color: #343a40;
+    color: white;
+}
+
+#add-game-btn:hover,
+#add-customer-btn:hover,
+#add-bet-btn:hover {
+    background-color: #23272b;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+    padding: 8px 12px; /* Smaller padding for icon button */
+    font-size: 1.1rem; /* Slightly larger icon */
+    line-height: 1; /* Ensure icon is centered vertically */
+}
+
+.delete-btn:hover {
+    background-color: #c82333;
+}
+
+.delete-all-btn {
+     background-color: #dc3545;
+     color: white;
+     float: right; /* Position to the right */
+     margin-bottom: 10px; /* Add some space below */
+}
+
+.delete-all-btn:hover {
+     background-color: #c82333;
+}
+
+
+.number-entry-section,
+.betting-grid-section,
+.summary-section {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    overflow: hidden; /* Clear floats */
+}
+
+.number-entry-section h2 {
+    margin-top: 0;
+}
+
+.entry-fields {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end; /* Align items to the bottom for labels */
+    margin-bottom: 10px;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.entry-fields .input-group {
+    flex-direction: column; /* Stack label and input vertically */
+    align-items: flex-start; /* Align label to the start */
+    margin-bottom: 0; /* Remove bottom margin as gap is handled by flex */
+}
+
+.entry-fields .input-group label {
+    margin-bottom: 5px; /* Space between label and input */
+    min-width: auto; /* Reset min-width */
+}
+
+.entry-fields .number-input {
+    flex: 1; /* Allow number inputs to take available space */
+}
+.entry-fields .amount-input {
+    flex: 1;
+}
+
+.entry-fields button {
+    margin-left: 10px; /* Space before the add button */
+    align-self: flex-end; /* Align button with the bottom of inputs */
+}
+
+
+.instructions {
+    font-size: 0.9em;
+    color: #6c757d;
+    clear: both; /* Ensure it appears below floated elements */
+    margin-top: 15px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 1px solid #dee2e6;
+    padding: 10px;
+    text-align: center;
+}
+
+th {
+    background-color: #e9ecef;
+    font-weight: bold;
+}
+
+#betting-grid td {
+    min-width: 50px; /* Ensure cells have some width */
+    height: 40px;
+    font-size: 0.9em;
+}
+
+#betting-grid thead th:first-child,
+#betting-grid tbody th {
+    background-color: #e9ecef;
+    font-weight: bold;
+}
+
+#betting-grid tbody tr:first-child td {
+    background-color: #e2f0d9; /* Light green for SD row */
+    font-weight: bold;
+}
+
+.summary-controls {
+    float: right;
+    margin-bottom: 10px;
+}
+
+#customer-summary td:last-child,
+#summary-total {
+    font-weight: bold;
+    text-align: right;
+}
+
+#customer-summary tr:last-child td {
+    border-top: 2px solid #343a40;
+}
