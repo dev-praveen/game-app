@@ -2,8 +2,18 @@
   "name": "game-app",
   "version": "1.0.0",
   "main": "index.js",
+  "bin": "index.js",
+  "pkg": {
+    "assets": [
+      "public/**/*",
+      "game_bets.db"
+    ],
+    "targets": ["node18-win-x64"],
+    "outputPath": "dist"
+  },
   "scripts": {
     "start": "node index.js",
+    "build": "pkg . --output dist/game-app && copy game_bets.db dist\\",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -13,5 +23,8 @@
   "dependencies": {
     "better-sqlite3": "^11.9.1",
     "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
   }
 }

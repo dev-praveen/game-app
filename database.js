@@ -1,8 +1,10 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-// Define the path for the database file within the project directory
-const dbPath = path.join(__dirname, 'game_bets.db');
+// Define the path for the database file, handling both development and packaged environments
+const dbPath = process.pkg
+    ? path.join(path.dirname(process.execPath), 'game_bets.db')
+    : path.join(__dirname, 'game_bets.db');
 
 // Initialize the database connection
 // verbose: console.log logs executed SQL statements
