@@ -113,7 +113,7 @@ app.post('/api/bets', (req, res) => {
 
 // Endpoint to delete bets based on filters
 app.delete('/api/bets', (req, res) => {
-    const { gameId, customerId } = req.query; // Filters from query params
+    const { gameId, customerId, date } = req.query; // Filters from query params
 
     // Basic validation: Ensure filters are provided
     if (!gameId || !customerId) {
@@ -121,7 +121,7 @@ app.delete('/api/bets', (req, res) => {
     }
 
     try {
-        const deletedCount = db.deleteBets({ gameId, customerId });
+        const deletedCount = db.deleteBets({ gameId, customerId, date });
         if (deletedCount > 0) {
             res.status(200).json({ message: `Successfully deleted ${deletedCount} bets.` });
         } else {
@@ -136,10 +136,10 @@ app.delete('/api/bets', (req, res) => {
 
 // Summary API
 app.get('/api/summary', (req, res) => {
-    const { gameId, customerId } = req.query; // e.g., ?gameId=1&customerId=2
+    const { gameId, customerId, date } = req.query; // e.g., ?gameId=1&customerId=2&date=2023-01-01
     try {
-        // Pass both filters to the database function
-        const summary = db.getCustomerSummary(gameId, customerId);
+        // Pass filters including date to the database function
+        const summary = db.getCustomerSummary(gameId, customerId, date);
         res.json(summary);
     } catch (error) {
         console.error("Error fetching summary:", error);

@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteSummaryBtn = document.getElementById('delete-summary-btn'); // New delete button
     const customerSummaryBody = document.getElementById('customer-summary').querySelector('tbody');
     const summaryTotalCell = document.getElementById('summary-total');
+    const summaryDateFilter = document.getElementById('summary-date-filter'); // Date picker
 
     // Modal Elements
     const confirmationModal = document.getElementById('confirmation-modal');
@@ -40,6 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let customers = [];
     let bets = []; // We might need a more structured way to store bets later
     let lastFocusedNumberInput = numberInput; // Track last used number input
+
+    // Set default date to today
+    const today = new Date().toISOString().split('T')[0];
+    summaryDateFilter.value = today;
 
     // --- Function Definitions ---
 
@@ -211,12 +216,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function updateCustomerSummary() {
         const selectedGameId = summaryGameFilter.value; // 'all' or a game ID
         const selectedCustomerId = summaryCustomerFilter.value; // 'all' or a customer ID
-        console.log(`Fetching summary for gameId: ${selectedGameId}, customerId: ${selectedCustomerId}`);
+        const date = summaryDateFilter.value || today;
+        console.log(`Fetching summary for gameId: ${selectedGameId}, customerId: ${selectedCustomerId}, date: ${date}`);
 
         // Construct query params, only include if not 'all'
         const queryParams = new URLSearchParams();
         if (selectedGameId !== 'all') queryParams.append('gameId', selectedGameId);
         if (selectedCustomerId !== 'all') queryParams.append('customerId', selectedCustomerId);
+        queryParams.append('date', date);
 
         try {
             const response = await fetch(`/api/summary?${queryParams.toString()}`);
@@ -338,23 +345,31 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleSummaryDelete() {
         const gameId = summaryGameFilter.value;
         const customerId = summaryCustomerFilter.value;
+        const date = summaryDateFilter.value;
 
         // Prepare confirmation message - Allow all/all case now
         let confirmMsg = `Are you sure you want to delete bets?`; // Default start
-        if (gameId === 'all' && customerId === 'all') {
+        if (gameId === 'all' && customerId === 'all' && !date) {
             confirmMsg = `Are you sure you want to delete ALL bets for ALL customers and ALL games? This cannot be undone.`;
         } else if (customerId !== 'all') {
             const custName = customers.find(c => c.id == customerId)?.name || `Customer ID ${customerId}`;
             confirmMsg = `Are you sure you want to delete bets for customer "${custName}"`;
             if (gameId !== 'all') {
                 const gameName = games.find(g => g.id == gameId)?.name || `Game ID ${gameId}`;
-                confirmMsg += ` in game "${gameName}"?`;
+                confirmMsg += ` in game "${gameName}"`;
             } else {
-                confirmMsg += ` across all games?`;
+                confirmMsg += ` across all games`;
             }
+            if (date) {
+                confirmMsg += ` on ${date}`;
+            }
+            confirmMsg += '?';
         } else { // customerId is 'all', so gameId must be specific (gameId !== 'all')
             const gameName = games.find(g => g.id == gameId)?.name || `Game ID ${gameId}`;
             confirmMsg = `Are you sure you want to delete bets for all customers in game "${gameName}"?`;
+            if (date) {
+                confirmMsg += ` on ${date}`;
+            }
         }
 
         // --- Simplified Modal Listener Logic ---
@@ -364,10 +379,10 @@ document.addEventListener('DOMContentLoaded', () => {
             modalConfirmBtn.removeEventListener('click', confirmAction);
             modalCancelBtn.removeEventListener('click', cancelAction);
             hideModal();
-            console.log(`Proceeding with delete for gameId: ${gameId}, customerId: ${customerId}`);
+            console.log(`Proceeding with delete for gameId: ${gameId}, customerId: ${customerId}, date: ${date}`);
 
             try {
-                const queryParams = new URLSearchParams({ gameId, customerId }).toString();
+                const queryParams = new URLSearchParams({ gameId, customerId, date }).toString();
                 const response = await fetch(`/api/bets?${queryParams}`, {
                     method: 'DELETE'
                 });
@@ -529,7 +544,8 @@ document.addEventListener('DOMContentLoaded', () => {
             customerId,
             betType, // 'SD' or 'DD'
             number: numberValue,
-            amount
+            amount,
+            betDate: summaryDateFilter.value // Include the selected date
         };
 
         console.log('Adding bet:', betData);
@@ -611,18 +627,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Listener for summary filter change
-    summaryGameFilter.addEventListener('change', () => {
-        updateCustomerSummary(); // Update summary when filter changes
-        // Also fetch bets for the selected customer/game combination when summary filter changes
-        fetchBetsForCurrentSelection(); // Update grid based on main selection
-    });
-
-    // Listener for the NEW customer summary filter change
-    summaryCustomerFilter.addEventListener('change', () => {
-        updateCustomerSummary(); // Update summary table
-        // Note: We don't necessarily need to update the main betting grid here,
-        // as it depends on the top-level game/customer selection.
-    });
+    summaryGameFilter.addEventListener('change', updateCustomerSummary);
+    summaryCustomerFilter.addEventListener('change', updateCustomerSummary);
+    summaryDateFilter.addEventListener('change', updateCustomerSummary);
 
     // Add listeners for game and customer selection changes (for the main betting grid)
     selectGameDropdown.addEventListener('change', fetchBetsForCurrentSelection);
