@@ -46,12 +46,12 @@
         <h2>Number Entry</h2>
         <!-- Removed Delete All button -->
         <div class="entry-fields">
-             <div class="input-group number-input">
+            <div class="input-group number-input">
                 <label for="number-input">Numbers (00-99)</label>
                 <input type="text" id="number-input" placeholder="00-99">
             </div>
-             <div class="input-group number-input">
-                 <label for="single-digit-input">Single Digit (0-9)</label>
+            <div class="input-group number-input">
+                <label for="single-digit-input">Single Digit (0-9)</label>
                 <input type="text" id="single-digit-input" placeholder="0-9">
             </div>
             <div class="input-group amount-input">
@@ -154,7 +154,17 @@
     </div>
 </div>
 
+<!-- Selection Validation Modal -->
+<div id="validation-modal" class="success-modal">
+    <div class="modal-content">
+        <div class="success-icon">⚠️</div>
+        <p id="validation-message"></p>
+        <div class="modal-actions">
+            <button class="ok-button">OK</button>
+        </div>
+    </div>
+</div>
 
-    <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

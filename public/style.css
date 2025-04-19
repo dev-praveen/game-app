@@ -118,36 +118,36 @@ button {
 
 .entry-fields {
     display: flex;
-    gap: 10px; /* Reduced gap */
-    align-items: flex-end; /* Align items to the bottom for labels */
+    gap: 0;
+    align-items: flex-end;
     margin-bottom: 10px;
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    flex-wrap: nowrap; /* Prevent wrapping */
 }
 
 .entry-fields .input-group {
-    flex-direction: column; /* Stack label and input vertically */
-    align-items: flex-start; /* Align label to the start */
-    margin-bottom: 0; /* Remove bottom margin as gap is handled by flex */
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 0;
 }
 
-.entry-fields .input-group label {
-    margin-bottom: 5px; /* Space between label and input */
-    min-width: auto; /* Reset min-width */
+.entry-fields .input-group.number-input {
+    margin-right: 8px; /* Slightly increased margin between number inputs */
 }
 
-.entry-fields .number-input {
-    flex: 1; /* Allow number inputs to take available space */
-}
-.entry-fields .amount-input {
-    flex: 1;
+.entry-fields .input-group.amount-input {
+    margin-right: 8px; /* Added comfortable margin before Add button */
+    width: auto; /* Let it take natural width */
 }
 
-.entry-fields button#add-bet-btn { /* Be more specific */
-    margin-left: 10px; /* Space before the add button */
-    align-self: flex-end; /* Align button with the bottom of inputs */
-    /* No longer need margin-right as delete-all button is gone */
+.entry-fields button#add-bet-btn {
+    height: 35px;
+    margin: 0;
+    padding: 0 20px; /* Slightly increased horizontal padding */
+    align-self: flex-end;
+    box-sizing: border-box;
+    white-space: nowrap; /* Prevent text wrapping */
+    flex-shrink: 0; /* Prevent button from shrinking */
 }
-
 
 .instructions {
     font-size: 0.9em;

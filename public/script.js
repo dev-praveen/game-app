@@ -193,6 +193,20 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Betting grid populated.");
     }
 
+    // Function to update the delete button state
+    function updateDeleteButtonState(hasData) {
+        const deleteBtn = document.getElementById('delete-summary-btn');
+        if (!hasData) {
+            deleteBtn.disabled = true;
+            deleteBtn.style.opacity = '0.5';
+            deleteBtn.style.cursor = 'not-allowed';
+        } else {
+            deleteBtn.disabled = false;
+            deleteBtn.style.opacity = '1';
+            deleteBtn.style.cursor = 'pointer';
+        }
+    }
+
     // Function to fetch and update the customer summary table
     async function updateCustomerSummary() {
         const selectedGameId = summaryGameFilter.value; // 'all' or a game ID
@@ -209,6 +223,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Failed to fetch summary');
             const summaryData = await response.json();
             console.log("Fetched summary data:", summaryData);
+
+            // Update delete button state based on whether there's data
+            updateDeleteButtonState(summaryData.length > 0);
 
             // Clear existing summary rows (keep the header)
             // Find the total row if it exists, otherwise null
@@ -296,6 +313,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 modal.style.display = 'none';
                 window.removeEventListener('click', closeOutside);
             }
+        });
+    }
+
+    function showValidationModal(message) {
+        const modal = document.getElementById('validation-modal');
+        const messageElement = modal.querySelector('#validation-message');
+        const okButton = modal.querySelector('.ok-button');
+        
+        messageElement.textContent = message;
+        modal.style.display = 'block';
+        
+        // Remove any existing event listeners
+        const newOkButton = okButton.cloneNode(true);
+        okButton.parentNode.replaceChild(newOkButton, okButton);
+        
+        // Add click handler for OK button
+        newOkButton.addEventListener('click', () => {
+            modal.style.display = 'none';
         });
     }
 
@@ -454,26 +489,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const amount = parseFloat(amountInput.value);
 
         if (!gameId || !customerId) {
-            alert('Please select both a game and a customer.');
+            showValidationModal('Please select both a game and a customer before placing a bet.');
             return;
         }
         if (!numberStr && !singleDigitStr) {
-            alert('Please enter a number (00-99) or a single digit (0-9).');
+            showValidationModal('Please enter a number (00-99) or a single digit (0-9).');
             return;
         }
         if (numberStr && singleDigitStr) {
-            alert('Please enter either a number (00-99) OR a single digit (0-9), not both.');
+            showValidationModal('Please enter either a number (00-99) OR a single digit (0-9), not both.');
             return;
         }
         if (isNaN(amount) || amount <= 0) {
-            alert('Please enter a valid positive amount.');
+            showValidationModal('Please enter a valid positive amount.');
             return;
         }
 
         let betType, numberValue;
         if (numberStr) {
             if (!/^\d{1,2}$/.test(numberStr) || parseInt(numberStr) < 0 || parseInt(numberStr) > 99) {
-                alert('Invalid number. Please enter a value between 00 and 99.');
+                showValidationModal('Invalid number. Please enter a value between 00 and 99.');
                 return;
             }
             betType = 'DD'; // Double Digit
@@ -481,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
             lastFocusedNumberInput = numberInput; // Remember this was the last used input
         } else { // singleDigitStr must have value here
             if (!/^\d$/.test(singleDigitStr)) {
-                alert('Invalid single digit. Please enter a value between 0 and 9.');
+                showValidationModal('Invalid single digit. Please enter a value between 0 and 9.');
                 return;
             }
             betType = 'SD'; // Single Digit
