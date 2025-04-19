@@ -35,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalConfirmBtn = document.getElementById('modal-confirm-btn');
     const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
-
     // --- State Variables ---
     let games = [];
     let customers = [];
@@ -102,7 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
     // Function to populate game dropdowns
     function populateGameDropdowns() {
         // Clear existing options (except the default)
@@ -124,13 +122,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to populate customer dropdown
     function populateCustomerDropdown() {
+        // Clear existing options (except the default)
         selectCustomerDropdown.innerHTML = '<option value="">Select a customer</option>';
+        summaryCustomerFilter.innerHTML = '<option value="all">All Customers</option>';
+
+        // Create an array for summary filter options to avoid duplicates
+        const summaryOptions = new Set();
+
         customers.forEach(customer => {
+            // Add to main selection dropdown
             const option = document.createElement('option');
             option.value = customer.id;
             option.textContent = customer.name;
-            selectCustomerDropdown.appendChild(option.cloneNode(true)); // Clone for main selection
-            summaryCustomerFilter.appendChild(option); // Use original for summary filter
+            selectCustomerDropdown.appendChild(option);
+
+            // Add to summary filter dropdown (using Set to avoid duplicates)
+            if (!summaryOptions.has(customer.id)) {
+                summaryOptions.add(customer.id);
+                const summaryOption = document.createElement('option');
+                summaryOption.value = customer.id;
+                summaryOption.textContent = customer.name;
+                summaryCustomerFilter.appendChild(summaryOption);
+            }
         });
     }
 
@@ -139,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bettingGridBody.innerHTML = ''; // Clear existing grid rows
 
         // --- Create Grid Structure ---
-         // SD Row (Single Digit)
+        // SD Row (Single Digit)
         const sdRow = bettingGridBody.insertRow();
         const sdHeaderCell = sdRow.insertCell();
         sdHeaderCell.outerHTML = '<th>SD</th>'; // Use th for header cell
@@ -153,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < 10; i++) { // Tens digit (0-9)
             const row = bettingGridBody.insertRow();
             const headerCell = row.insertCell();
-             headerCell.outerHTML = `<th>${i}</th>`; // Row header (tens digit)
+            headerCell.outerHTML = `<th>${i}</th>`; // Row header (tens digit)
             for (let j = 0; j < 10; j++) { // Units digit (0-9)
                 const cell = row.insertCell();
                 const number = `${i}${j}`;
@@ -177,11 +190,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn(`Cell with ID ${cellId} not found for bet:`, bet);
             }
         });
-         console.log("Betting grid populated.");
+        console.log("Betting grid populated.");
     }
 
-     // Function to fetch and update the customer summary table
-     async function updateCustomerSummary() {
+    // Function to fetch and update the customer summary table
+    async function updateCustomerSummary() {
         const selectedGameId = summaryGameFilter.value; // 'all' or a game ID
         const selectedCustomerId = summaryCustomerFilter.value; // 'all' or a customer ID
         console.log(`Fetching summary for gameId: ${selectedGameId}, customerId: ${selectedCustomerId}`);
@@ -200,18 +213,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // Clear existing summary rows (keep the header)
             // Find the total row if it exists, otherwise null
             let totalRow = customerSummaryBody.querySelector('tr:last-child');
-             if (totalRow && totalRow.cells[0].textContent !== 'Total') {
-                 totalRow = null; // It wasn't the total row
-             }
-             // Clear all rows except the potential total row
-             while (customerSummaryBody.firstChild && customerSummaryBody.firstChild !== totalRow) {
-                 customerSummaryBody.removeChild(customerSummaryBody.firstChild);
-             }
-             // If total row exists, clear its amount cell
-             if(totalRow) {
-                 totalRow.cells[1].textContent = '₹ 0';
-             }
-
+            if (totalRow && totalRow.cells[0].textContent !== 'Total') {
+                totalRow = null; // It wasn't the total row
+            }
+            // Clear all rows except the potential total row
+            while (customerSummaryBody.firstChild && customerSummaryBody.firstChild !== totalRow) {
+                customerSummaryBody.removeChild(customerSummaryBody.firstChild);
+            }
+            // If total row exists, clear its amount cell
+            if (totalRow) {
+                totalRow.cells[1].textContent = '₹ 0';
+            }
 
             let grandTotal = 0;
             summaryData.forEach(item => {
@@ -224,31 +236,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 grandTotal += item.total_amount;
             });
 
-             // Ensure the Total row exists and update it
-             if (!totalRow) {
-                 totalRow = customerSummaryBody.insertRow(); // Add total row if it wasn't there
-                 totalRow.insertCell().textContent = 'Total';
-                 const totalAmountCell = totalRow.insertCell();
-                 totalAmountCell.id = 'summary-total'; // Ensure ID is set
-                 totalAmountCell.style.fontWeight = 'bold';
-                 totalAmountCell.style.borderTop = '2px solid #343a40';
-                 totalRow.cells[0].style.borderTop = '2px solid #343a40';
-             }
-             const finalTotalCell = document.getElementById('summary-total'); // Get it by ID to be sure
-             finalTotalCell.textContent = `₹ ${grandTotal.toFixed(2)}`;
-             finalTotalCell.style.textAlign = 'right'; // Align amount right
-
+            // Ensure the Total row exists and update it
+            if (!totalRow) {
+                totalRow = customerSummaryBody.insertRow(); // Add total row if it wasn't there
+                totalRow.insertCell().textContent = 'Total';
+                const totalAmountCell = totalRow.insertCell();
+                totalAmountCell.id = 'summary-total'; // Ensure ID is set
+                totalAmountCell.style.fontWeight = 'bold';
+                totalAmountCell.style.borderTop = '2px solid #343a40';
+                totalRow.cells[0].style.borderTop = '2px solid #343a40';
+            }
+            const finalTotalCell = document.getElementById('summary-total'); // Get it by ID to be sure
+            finalTotalCell.textContent = `₹ ${grandTotal.toFixed(2)}`;
+            finalTotalCell.style.textAlign = 'right'; // Align amount right
 
         } catch (error) {
             console.error('Error updating customer summary:', error);
             alert('Could not update customer summary.');
-             // Clear summary on error
-             customerSummaryBody.innerHTML = ''; // Clear all rows
-             const totalRow = customerSummaryBody.insertRow(); // Add back total row structure
-             totalRow.insertCell().textContent = 'Total';
-             const totalAmountCell = totalRow.insertCell();
-             totalAmountCell.id = 'summary-total';
-             totalAmountCell.textContent = '₹ 0';
+            // Clear summary on error
+            customerSummaryBody.innerHTML = ''; // Clear all rows
+            const totalRow = customerSummaryBody.insertRow(); // Add back total row structure
+            totalRow.insertCell().textContent = 'Total';
+            const totalAmountCell = totalRow.insertCell();
+            totalAmountCell.id = 'summary-total';
+            totalAmountCell.textContent = '₹ 0';
         }
     }
 
@@ -260,6 +271,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function hideModal() {
         confirmationModal.style.display = 'none';
+    }
+
+    function showSuccessModal(modalId, message) {
+        const modal = document.getElementById(modalId);
+        const messageElement = modal.querySelector('p');
+        const okButton = modal.querySelector('.ok-button');
+        
+        messageElement.textContent = message;
+        modal.style.display = 'block';
+        
+        // Remove any existing event listeners
+        const newOkButton = okButton.cloneNode(true);
+        okButton.parentNode.replaceChild(newOkButton, okButton);
+        
+        // Add click handler for OK button
+        newOkButton.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+        
+        // Close on click outside
+        window.addEventListener('click', function closeOutside(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+                window.removeEventListener('click', closeOutside);
+            }
+        });
     }
 
     // Function to handle the deletion confirmation
@@ -285,7 +322,6 @@ document.addEventListener('DOMContentLoaded', () => {
             confirmMsg = `Are you sure you want to delete bets for all customers in game "${gameName}"?`;
         }
 
-
         // --- Simplified Modal Listener Logic ---
         // Define the action to take on confirmation *before* showing the modal
         const confirmAction = async () => {
@@ -295,32 +331,46 @@ document.addEventListener('DOMContentLoaded', () => {
             hideModal();
             console.log(`Proceeding with delete for gameId: ${gameId}, customerId: ${customerId}`);
 
-             try {
-                 const queryParams = new URLSearchParams({ gameId, customerId }).toString();
-                 const response = await fetch(`/api/bets?${queryParams}`, {
-                     method: 'DELETE'
-                 });
+            try {
+                const queryParams = new URLSearchParams({ gameId, customerId }).toString();
+                const response = await fetch(`/api/bets?${queryParams}`, {
+                    method: 'DELETE'
+                });
 
-                 const result = await response.json();
+                const result = await response.json();
 
-                 if (!response.ok) {
-                     throw new Error(result.message || 'Failed to delete bets');
-                 }
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to delete bets');
+                }
 
-                 alert(result.message || 'Bets deleted successfully.');
+                // Show success modal instead of alert
+                showSuccessModal('delete-success-modal', result.message || 'Bets deleted successfully.');
 
-                 // Refresh data after successful deletion
-                 await fetchBetsForCurrentSelection(); // Refresh grid based on main selection
-                 await updateCustomerSummary(); // Refresh summary based on summary filters
+                // Refresh all data after successful deletion
+                await Promise.all([
+                    fetchGames(),       // Refresh games dropdown
+                    fetchCustomers(),   // Refresh customers dropdown
+                    fetchBetsForCurrentSelection(), // Refresh grid based on main selection
+                    updateCustomerSummary() // Refresh summary based on summary filters
+                ]);
+
+                // Clear selections
+                selectGameDropdown.value = '';
+                selectCustomerDropdown.value = '';
+
+                // Clear betting inputs
+                numberInput.value = '';
+                singleDigitInput.value = '';
+                amountInput.value = '';
 
             } catch (error) {
-                 console.error("Error deleting bets:", error);
-                 alert(`Could not delete bets: ${error.message}`);
+                console.error("Error deleting bets:", error);
+                alert(`Could not delete bets: ${error.message}`);
             }
         };
 
         const cancelAction = () => {
-             // Remove listeners immediately
+            // Remove listeners immediately
             modalConfirmBtn.removeEventListener('click', confirmAction);
             modalCancelBtn.removeEventListener('click', cancelAction);
             hideModal();
@@ -335,7 +385,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showModal(confirmMsg);
     }
 
-
     // Function to handle adding a new game
     async function handleAddGame() {
         const name = gameNameInput.value.trim();
@@ -349,15 +398,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name })
             });
-            if (!response.ok) throw new Error('Failed to add game');
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to add game');
+            }
+
             const newGame = await response.json();
-            games.push(newGame); // Add to local cache
-            populateGameDropdowns(); // Update dropdowns
-            gameNameInput.value = ''; // Clear input
-            alert(`Game "${name}" added successfully!`);
+            games.push(newGame);
+            populateGameDropdowns();
+            gameNameInput.value = '';
+            showSuccessModal('game-success-modal', `Game "${name}" added successfully!`);
         } catch (error) {
             console.error('Error adding game:', error);
-            alert('Could not add game.');
+            alert(error.message || 'Could not add game.');
         }
     }
 
@@ -368,21 +422,26 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Please enter a customer name.');
             return;
         }
-         try {
+        try {
             const response = await fetch('/api/customers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name })
             });
-            if (!response.ok) throw new Error('Failed to add customer');
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to add customer');
+            }
+
             const newCustomer = await response.json();
-            customers.push(newCustomer); // Add to local cache
-            populateCustomerDropdown(); // Update dropdown
-            customerNameInput.value = ''; // Clear input
-            alert(`Customer "${name}" added successfully!`);
+            customers.push(newCustomer);
+            populateCustomerDropdown();
+            customerNameInput.value = '';
+            showSuccessModal('customer-success-modal', `Customer "${name}" added successfully!`);
         } catch (error) {
             console.error('Error adding customer:', error);
-            alert('Could not add customer.');
+            alert(error.message || 'Could not add customer.');
         }
     }
 
@@ -402,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Please enter a number (00-99) or a single digit (0-9).');
             return;
         }
-         if (numberStr && singleDigitStr) {
+        if (numberStr && singleDigitStr) {
             alert('Please enter either a number (00-99) OR a single digit (0-9), not both.');
             return;
         }
@@ -414,22 +473,21 @@ document.addEventListener('DOMContentLoaded', () => {
         let betType, numberValue;
         if (numberStr) {
             if (!/^\d{1,2}$/.test(numberStr) || parseInt(numberStr) < 0 || parseInt(numberStr) > 99) {
-                 alert('Invalid number. Please enter a value between 00 and 99.');
-                 return;
+                alert('Invalid number. Please enter a value between 00 and 99.');
+                return;
             }
             betType = 'DD'; // Double Digit
             numberValue = numberStr.padStart(2, '0'); // Ensure two digits
             lastFocusedNumberInput = numberInput; // Remember this was the last used input
         } else { // singleDigitStr must have value here
-             if (!/^\d$/.test(singleDigitStr)) {
-                 alert('Invalid single digit. Please enter a value between 0 and 9.');
-                 return;
-             }
+            if (!/^\d$/.test(singleDigitStr)) {
+                alert('Invalid single digit. Please enter a value between 0 and 9.');
+                return;
+            }
             betType = 'SD'; // Single Digit
             numberValue = singleDigitStr;
             lastFocusedNumberInput = singleDigitInput; // Remember this was the last used input
         }
-
 
         const betData = {
             gameId,
@@ -447,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(betData)
             });
-             if (!response.ok) {
+            if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Failed to add bet');
             }
@@ -492,20 +550,20 @@ document.addEventListener('DOMContentLoaded', () => {
             singleDigitInput.value = ''; // Clear the other input
             // Only focus amount if 2 digits are entered
             if (value.length >= 2) {
-                 // Optional: truncate to 2 digits if needed
-                 if (value.length > 2) numberInput.value = value.substring(0, 2);
-                 amountInput.focus();
+                // Optional: truncate to 2 digits if needed
+                if (value.length > 2) numberInput.value = value.substring(0, 2);
+                amountInput.focus();
             }
         }
     });
-     singleDigitInput.addEventListener('input', () => {
+    singleDigitInput.addEventListener('input', () => {
         const value = singleDigitInput.value.trim();
         if (value) {
-             numberInput.value = ''; // Clear the other input
-             // Optional: truncate to 1 digit if needed
-             if (value.length > 1) singleDigitInput.value = value.substring(0, 1);
-             // Focus amount immediately for single digit
-             amountInput.focus();
+            numberInput.value = ''; // Clear the other input
+            // Optional: truncate to 1 digit if needed
+            if (value.length > 1) singleDigitInput.value = value.substring(0, 1);
+            // Focus amount immediately for single digit
+            amountInput.focus();
         }
     });
 
@@ -521,17 +579,15 @@ document.addEventListener('DOMContentLoaded', () => {
     summaryGameFilter.addEventListener('change', () => {
         updateCustomerSummary(); // Update summary when filter changes
         // Also fetch bets for the selected customer/game combination when summary filter changes
-        // Also fetch bets for the selected customer/game combination when summary filter changes
         fetchBetsForCurrentSelection(); // Update grid based on main selection
     });
 
-     // Listener for the NEW customer summary filter change
-     summaryCustomerFilter.addEventListener('change', () => {
-         updateCustomerSummary(); // Update summary table
-         // Note: We don't necessarily need to update the main betting grid here,
-         // as it depends on the top-level game/customer selection.
-     });
-
+    // Listener for the NEW customer summary filter change
+    summaryCustomerFilter.addEventListener('change', () => {
+        updateCustomerSummary(); // Update summary table
+        // Note: We don't necessarily need to update the main betting grid here,
+        // as it depends on the top-level game/customer selection.
+    });
 
     // Add listeners for game and customer selection changes (for the main betting grid)
     selectGameDropdown.addEventListener('change', fetchBetsForCurrentSelection);
@@ -546,7 +602,6 @@ document.addEventListener('DOMContentLoaded', () => {
             hideModal();
         }
     });
-
 
     // --- Initial Load ---
     async function initializeApp() {

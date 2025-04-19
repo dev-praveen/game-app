@@ -158,12 +158,28 @@ function deleteBets(filters = {}) {
     // Allow deleting ALL bets if both filters are 'all'
     if (filters.gameId === 'all' && filters.customerId === 'all') {
         console.warn("Executing DELETE for ALL bets!");
-        const stmt = db.prepare('DELETE FROM bets');
-        const info = stmt.run();
-        console.log(`Deleted ${info.changes} bets.`);
-        return info.changes;
+        // Begin a transaction to ensure data consistency
+        const transaction = db.transaction(() => {
+            // First delete all bets
+            const deleteAllBets = db.prepare('DELETE FROM bets');
+            const betsDeleted = deleteAllBets.run();
+            
+            // Then delete all games
+            const deleteGames = db.prepare('DELETE FROM games');
+            deleteGames.run();
+            
+            // Finally delete all customers
+            const deleteCustomers = db.prepare('DELETE FROM customers');
+            deleteCustomers.run();
+            
+            return betsDeleted.changes;
+        });
+        
+        // Execute the transaction
+        const changes = transaction();
+        console.log(`Deleted ${changes} bets and cleared games and customers.`);
+        return changes;
     }
-
 
     let sql = 'DELETE FROM bets';
     const params = [];
@@ -180,21 +196,14 @@ function deleteBets(filters = {}) {
 
     if (conditions.length > 0) {
         sql += ' WHERE ' + conditions.join(' AND ');
-    } else if (conditions.length === 0) {
-         // This case should not happen if the 'all'/'all' case is handled above,
-         // but as a safety net, prevent deleting everything if filters are missing/invalid.
-        console.warn("Delete operation requires specific filters or 'all'/'all'. Aborting.");
-        return 0;
     }
-
 
     console.log(`Executing DELETE: ${sql} with params: ${params}`);
     const stmt = db.prepare(sql);
     const info = stmt.run(...params);
     console.log(`Deleted ${info.changes} bets.`);
-    return info.changes; // Return the number of deleted rows
+    return info.changes;
 }
-
 
 // Function to calculate customer summary
 function getCustomerSummary(gameId = 'all', customerId = 'all') { // Add customerId filter
