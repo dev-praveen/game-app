@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="container"> <!-- Add container wrapper -->
     <h1>Game Betting Management</h1>
 
     <div class="management-section">
@@ -21,7 +22,7 @@
                     <option value="">Select a game</option>
                     <!-- Game options will be populated dynamically -->
                 </select>
-                <button class="delete-btn" title="Delete selected game">🗑️</button>
+                <!-- Removed delete button -->
             </div>
         </div>
 
@@ -36,14 +37,14 @@
                     <option value="">Select a customer</option>
                     <!-- Customer options will be populated dynamically -->
                 </select>
-                <button class="delete-btn" title="Delete selected customer">🗑️</button>
+                <!-- Removed delete button -->
             </div>
         </div>
     </div>
 
     <div class="number-entry-section">
         <h2>Number Entry</h2>
-        <button id="delete-all-btn" class="delete-all-btn">Delete All</button>
+        <!-- Removed Delete All button -->
         <div class="entry-fields">
              <div class="input-group number-input">
                 <label for="number-input">Numbers (00-99)</label>
@@ -84,6 +85,11 @@
                  <option value="all">All Games</option>
                  <!-- Game options for filtering -->
              </select>
+             <select id="summary-customer-filter"> <!-- Added Customer Filter -->
+                 <option value="all">All Customers</option>
+                 <!-- Customer options for filtering -->
+             </select>
+             <button id="delete-summary-btn" class="delete-btn">Delete</button> <!-- Added Delete Button -->
          </div>
         <table id="customer-summary">
             <thead>
@@ -101,6 +107,20 @@
             </tbody>
         </table>
     </div>
+
+</div> <!-- Close container wrapper -->
+
+<!-- Confirmation Modal Structure (Initially Hidden) -->
+<div id="confirmation-modal" class="modal">
+    <div class="modal-content">
+        <p id="modal-message">Are you sure you want to delete these bets?</p>
+        <div class="modal-actions">
+            <button id="modal-confirm-btn">Confirm</button>
+            <button id="modal-cancel-btn">Cancel</button>
+        </div>
+    </div>
+</div>
+
 
     <script src="script.js"></script>
 </body>

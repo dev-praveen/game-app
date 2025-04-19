@@ -153,8 +153,51 @@ function getAllBets(filters = {}) {
     return stmt.all(...params);
 }
 
+// Function to delete bets based on filters
+function deleteBets(filters = {}) {
+    // Allow deleting ALL bets if both filters are 'all'
+    if (filters.gameId === 'all' && filters.customerId === 'all') {
+        console.warn("Executing DELETE for ALL bets!");
+        const stmt = db.prepare('DELETE FROM bets');
+        const info = stmt.run();
+        console.log(`Deleted ${info.changes} bets.`);
+        return info.changes;
+    }
+
+
+    let sql = 'DELETE FROM bets';
+    const params = [];
+    const conditions = [];
+
+    if (filters.customerId && filters.customerId !== 'all') {
+        conditions.push('customer_id = ?');
+        params.push(filters.customerId);
+    }
+    if (filters.gameId && filters.gameId !== 'all') {
+        conditions.push('game_id = ?');
+        params.push(filters.gameId);
+    }
+
+    if (conditions.length > 0) {
+        sql += ' WHERE ' + conditions.join(' AND ');
+    } else if (conditions.length === 0) {
+         // This case should not happen if the 'all'/'all' case is handled above,
+         // but as a safety net, prevent deleting everything if filters are missing/invalid.
+        console.warn("Delete operation requires specific filters or 'all'/'all'. Aborting.");
+        return 0;
+    }
+
+
+    console.log(`Executing DELETE: ${sql} with params: ${params}`);
+    const stmt = db.prepare(sql);
+    const info = stmt.run(...params);
+    console.log(`Deleted ${info.changes} bets.`);
+    return info.changes; // Return the number of deleted rows
+}
+
+
 // Function to calculate customer summary
-function getCustomerSummary(gameId = 'all') {
+function getCustomerSummary(gameId = 'all', customerId = 'all') { // Add customerId filter
      let sql = `
         SELECT
             c.id as customer_id,
@@ -164,10 +207,19 @@ function getCustomerSummary(gameId = 'all') {
         JOIN customers c ON b.customer_id = c.id
     `;
     const params = [];
+    const conditions = [];
 
     if (gameId && gameId !== 'all') {
-        sql += ' WHERE b.game_id = ?';
+        conditions.push('b.game_id = ?');
         params.push(gameId);
+    }
+     if (customerId && customerId !== 'all') { // Add customer condition
+        conditions.push('b.customer_id = ?');
+        params.push(customerId);
+    }
+
+     if (conditions.length > 0) {
+        sql += ' WHERE ' + conditions.join(' AND ');
     }
 
     sql += `
@@ -188,6 +240,7 @@ module.exports = {
     getAllCustomers,
     addBet,
     getAllBets,
+    deleteBets, // Export deleteBets
     getCustomerSummary,
     // Export db instance if direct access is needed elsewhere (use with caution)
     // db

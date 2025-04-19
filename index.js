@@ -111,11 +111,41 @@ app.post('/api/bets', (req, res) => {
     }
 });
 
+// Endpoint to delete bets based on filters
+app.delete('/api/bets', (req, res) => {
+    const { gameId, customerId } = req.query; // Filters from query params
+
+    // Basic validation: Ensure filters are provided
+    if (!gameId || !customerId) {
+        return res.status(400).json({ message: "Both gameId and customerId filters are required for deletion." });
+    }
+     // Prevent deleting ALL bets unless explicitly handled in db.deleteBets
+     if (gameId === 'all' && customerId === 'all') {
+         // This case is currently blocked in database.js for safety
+         return res.status(400).json({ message: "Deleting all bets is not allowed through this endpoint for safety." });
+     }
+
+    try {
+        const deletedCount = db.deleteBets({ gameId, customerId });
+        if (deletedCount > 0) {
+            res.status(200).json({ message: `Successfully deleted ${deletedCount} bets.` });
+        } else {
+             // Could be that no bets matched the criteria
+            res.status(200).json({ message: "No bets found matching the criteria to delete." });
+        }
+    } catch (error) {
+        console.error("Error deleting bets:", error);
+        res.status(500).json({ message: "Failed to delete bets" });
+    }
+});
+
+
 // Summary API
 app.get('/api/summary', (req, res) => {
-    const { gameId } = req.query; // e.g., ?gameId=1 or ?gameId=all
+    const { gameId, customerId } = req.query; // e.g., ?gameId=1&customerId=2
     try {
-        const summary = db.getCustomerSummary(gameId);
+        // Pass both filters to the database function
+        const summary = db.getCustomerSummary(gameId, customerId);
         res.json(summary);
     } catch (error) {
         console.error("Error fetching summary:", error);

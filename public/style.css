@@ -1,8 +1,16 @@
 body {
     font-family: sans-serif;
-    margin: 20px;
+    /* Remove margin from body, apply to container */
+    margin: 0;
+    padding: 20px 0; /* Add padding top/bottom */
     background-color: #f8f9fa;
     color: #333;
+}
+
+.container {
+    max-width: 1200px; /* Adjust this value as needed */
+    margin: 0 auto; /* Center the container */
+    padding: 0 15px; /* Add some horizontal padding inside the container */
 }
 
 h1, h2 {
@@ -42,15 +50,23 @@ h1, h2 {
 input[type="text"],
 input[type="number"],
 select {
-    padding: 10px;
+    padding: 8px; /* Reduced padding */
     border: 1px solid #ced4da;
     border-radius: 4px;
     flex-grow: 1;
-    font-size: 1rem;
+    font-size: 0.9rem; /* Slightly smaller font */
+    max-width: 250px; /* Limit max width for inputs/selects in management */
 }
 
+/* Override max-width for number entry inputs */
+.entry-fields input[type="text"],
+.entry-fields input[type="number"] {
+    max-width: none; /* Allow them to flex */
+}
+
+
 button {
-    padding: 10px 15px;
+    padding: 8px 12px; /* Reduced padding */
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -80,20 +96,10 @@ button {
 }
 
 .delete-btn:hover {
-    background-color: #c82333;
-}
-
-.delete-all-btn {
-     background-color: #dc3545;
-     color: white;
-     float: right; /* Position to the right */
-     margin-bottom: 10px; /* Add some space below */
-}
-
-.delete-all-btn:hover {
      background-color: #c82333;
 }
 
+/* Removed .delete-all-btn styles */
 
 .number-entry-section,
 .betting-grid-section,
@@ -112,7 +118,7 @@ button {
 
 .entry-fields {
     display: flex;
-    gap: 15px;
+    gap: 10px; /* Reduced gap */
     align-items: flex-end; /* Align items to the bottom for labels */
     margin-bottom: 10px;
     flex-wrap: wrap; /* Allow wrapping on smaller screens */
@@ -136,9 +142,10 @@ button {
     flex: 1;
 }
 
-.entry-fields button {
+.entry-fields button#add-bet-btn { /* Be more specific */
     margin-left: 10px; /* Space before the add button */
     align-self: flex-end; /* Align button with the bottom of inputs */
+    /* No longer need margin-right as delete-all button is gone */
 }
 
 
@@ -167,9 +174,10 @@ th {
 }
 
 #betting-grid td {
-    min-width: 50px; /* Ensure cells have some width */
-    height: 40px;
-    font-size: 0.9em;
+    min-width: 40px; /* Reduced min-width */
+    height: 30px;   /* Reduced height */
+    padding: 5px;   /* Reduced padding */
+    font-size: 0.85em; /* Slightly smaller font */
 }
 
 #betting-grid thead th:first-child,
@@ -186,6 +194,13 @@ th {
 .summary-controls {
     float: right;
     margin-bottom: 10px;
+    display: flex; /* Use flexbox for alignment */
+    gap: 10px; /* Space between controls */
+    align-items: center; /* Vertically align items */
+}
+
+.summary-controls select {
+    max-width: 180px; /* Adjust width for summary selects */
 }
 
 #customer-summary td:last-child,
@@ -196,4 +211,60 @@ th {
 
 #customer-summary tr:last-child td {
     border-top: 2px solid #343a40;
+}
+
+/* --- Modal Styles --- */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 25px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more specific */
+    max-width: 400px; /* Maximum width */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+.modal-content p {
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.modal-actions button {
+    padding: 10px 20px;
+}
+
+#modal-confirm-btn {
+    background-color: #dc3545; /* Red for confirmation */
+    color: white;
+}
+#modal-confirm-btn:hover {
+    background-color: #c82333;
+}
+
+#modal-cancel-btn {
+    background-color: #6c757d; /* Grey for cancel */
+    color: white;
+}
+#modal-cancel-btn:hover {
+    background-color: #5a6268;
 }

@@ -24,8 +24,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Customer Summary
     const summaryGameFilter = document.getElementById('summary-game-filter');
+    const summaryCustomerFilter = document.getElementById('summary-customer-filter'); // New filter
+    const deleteSummaryBtn = document.getElementById('delete-summary-btn'); // New delete button
     const customerSummaryBody = document.getElementById('customer-summary').querySelector('tbody');
     const summaryTotalCell = document.getElementById('summary-total');
+
+    // Modal Elements
+    const confirmationModal = document.getElementById('confirmation-modal');
+    const modalMessage = document.getElementById('modal-message');
+    const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+    const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
 
     // --- State Variables ---
     let games = [];
@@ -120,7 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const option = document.createElement('option');
             option.value = customer.id;
             option.textContent = customer.name;
-            selectCustomerDropdown.appendChild(option);
+            selectCustomerDropdown.appendChild(option.cloneNode(true)); // Clone for main selection
+            summaryCustomerFilter.appendChild(option); // Use original for summary filter
         });
     }
 
@@ -173,10 +183,16 @@ document.addEventListener('DOMContentLoaded', () => {
      // Function to fetch and update the customer summary table
      async function updateCustomerSummary() {
         const selectedGameId = summaryGameFilter.value; // 'all' or a game ID
-        console.log(`Fetching summary for gameId: ${selectedGameId}`);
+        const selectedCustomerId = summaryCustomerFilter.value; // 'all' or a customer ID
+        console.log(`Fetching summary for gameId: ${selectedGameId}, customerId: ${selectedCustomerId}`);
+
+        // Construct query params, only include if not 'all'
+        const queryParams = new URLSearchParams();
+        if (selectedGameId !== 'all') queryParams.append('gameId', selectedGameId);
+        if (selectedCustomerId !== 'all') queryParams.append('customerId', selectedCustomerId);
 
         try {
-            const response = await fetch(`/api/summary?gameId=${selectedGameId}`);
+            const response = await fetch(`/api/summary?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch summary');
             const summaryData = await response.json();
             console.log("Fetched summary data:", summaryData);
@@ -234,6 +250,89 @@ document.addEventListener('DOMContentLoaded', () => {
              totalAmountCell.id = 'summary-total';
              totalAmountCell.textContent = '₹ 0';
         }
+    }
+
+    // --- Modal Handling Functions ---
+    function showModal(message) {
+        modalMessage.textContent = message || 'Are you sure?'; // Default message
+        confirmationModal.style.display = 'block';
+    }
+
+    function hideModal() {
+        confirmationModal.style.display = 'none';
+    }
+
+    // Function to handle the deletion confirmation
+    async function handleSummaryDelete() {
+        const gameId = summaryGameFilter.value;
+        const customerId = summaryCustomerFilter.value;
+
+        // Prepare confirmation message - Allow all/all case now
+        let confirmMsg = `Are you sure you want to delete bets?`; // Default start
+        if (gameId === 'all' && customerId === 'all') {
+            confirmMsg = `Are you sure you want to delete ALL bets for ALL customers and ALL games? This cannot be undone.`;
+        } else if (customerId !== 'all') {
+            const custName = customers.find(c => c.id == customerId)?.name || `Customer ID ${customerId}`;
+            confirmMsg = `Are you sure you want to delete bets for customer "${custName}"`;
+            if (gameId !== 'all') {
+                const gameName = games.find(g => g.id == gameId)?.name || `Game ID ${gameId}`;
+                confirmMsg += ` in game "${gameName}"?`;
+            } else {
+                confirmMsg += ` across all games?`;
+            }
+        } else { // customerId is 'all', so gameId must be specific (gameId !== 'all')
+            const gameName = games.find(g => g.id == gameId)?.name || `Game ID ${gameId}`;
+            confirmMsg = `Are you sure you want to delete bets for all customers in game "${gameName}"?`;
+        }
+
+
+        // --- Simplified Modal Listener Logic ---
+        // Define the action to take on confirmation *before* showing the modal
+        const confirmAction = async () => {
+            // Remove listeners immediately to prevent multiple clicks
+            modalConfirmBtn.removeEventListener('click', confirmAction);
+            modalCancelBtn.removeEventListener('click', cancelAction);
+            hideModal();
+            console.log(`Proceeding with delete for gameId: ${gameId}, customerId: ${customerId}`);
+
+             try {
+                 const queryParams = new URLSearchParams({ gameId, customerId }).toString();
+                 const response = await fetch(`/api/bets?${queryParams}`, {
+                     method: 'DELETE'
+                 });
+
+                 const result = await response.json();
+
+                 if (!response.ok) {
+                     throw new Error(result.message || 'Failed to delete bets');
+                 }
+
+                 alert(result.message || 'Bets deleted successfully.');
+
+                 // Refresh data after successful deletion
+                 await fetchBetsForCurrentSelection(); // Refresh grid based on main selection
+                 await updateCustomerSummary(); // Refresh summary based on summary filters
+
+            } catch (error) {
+                 console.error("Error deleting bets:", error);
+                 alert(`Could not delete bets: ${error.message}`);
+            }
+        };
+
+        const cancelAction = () => {
+             // Remove listeners immediately
+            modalConfirmBtn.removeEventListener('click', confirmAction);
+            modalCancelBtn.removeEventListener('click', cancelAction);
+            hideModal();
+            console.log("Delete cancelled.");
+        };
+
+        // Add the listeners
+        modalConfirmBtn.addEventListener('click', confirmAction);
+        modalCancelBtn.addEventListener('click', cancelAction);
+
+        // Now show the modal
+        showModal(confirmMsg);
     }
 
 
@@ -422,20 +521,30 @@ document.addEventListener('DOMContentLoaded', () => {
     summaryGameFilter.addEventListener('change', () => {
         updateCustomerSummary(); // Update summary when filter changes
         // Also fetch bets for the selected customer/game combination when summary filter changes
-        // Note: The summary filter *is* the game filter in this UI
-        fetchBetsForCurrentSelection();
+        // Also fetch bets for the selected customer/game combination when summary filter changes
+        fetchBetsForCurrentSelection(); // Update grid based on main selection
     });
 
-    // Add listeners for game and customer selection changes
+     // Listener for the NEW customer summary filter change
+     summaryCustomerFilter.addEventListener('change', () => {
+         updateCustomerSummary(); // Update summary table
+         // Note: We don't necessarily need to update the main betting grid here,
+         // as it depends on the top-level game/customer selection.
+     });
+
+
+    // Add listeners for game and customer selection changes (for the main betting grid)
     selectGameDropdown.addEventListener('change', fetchBetsForCurrentSelection);
     selectCustomerDropdown.addEventListener('change', fetchBetsForCurrentSelection);
 
+    // Listener for the new delete summary button
+    deleteSummaryBtn.addEventListener('click', handleSummaryDelete);
 
-    // Placeholder for delete buttons (functionality not implemented yet)
-    document.querySelectorAll('.delete-btn, #delete-all-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            alert('Delete functionality is not yet implemented.');
-        });
+    // Listener to close modal if clicking outside the content
+    window.addEventListener('click', (event) => {
+        if (event.target == confirmationModal) {
+            hideModal();
+        }
     });
 
 
