@@ -61,22 +61,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Function to fetch bets (potentially filtered)
-    async function fetchBets(filters = {}) {
-        console.log("Fetching bets with filters:", filters);
-        // Construct query string from filters
+    // Function to fetch bets based on current selections
+    async function fetchBetsForCurrentSelection() {
+        const gameId = selectGameDropdown.value;
+        const customerId = selectCustomerDropdown.value;
+
+        // Only fetch if both a game and customer are selected
+        if (!gameId || !customerId) {
+            console.log("Game or Customer not selected, clearing bets.");
+            bets = []; // Clear local bets array
+            populateBettingGrid(); // Clear the grid display
+            return; // Don't fetch
+        }
+
+        const filters = { gameId, customerId };
+        console.log("Fetching bets for selection:", filters);
         const queryParams = new URLSearchParams(filters).toString();
-        const url = `/api/bets${queryParams ? '?' + queryParams : ''}`;
+        const url = `/api/bets?${queryParams}`;
 
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error('Failed to fetch bets');
             bets = await response.json(); // Update the global bets array
             console.log("Fetched bets:", bets);
-            populateBettingGrid(); // Populate grid with new data
+            populateBettingGrid(); // Populate grid with fetched data
         } catch (error) {
             console.error('Error fetching bets:', error);
-            alert('Could not load bet data.');
+            alert('Could not load bet data for the current selection.');
             bets = []; // Clear bets on error
             populateBettingGrid(); // Clear grid display on error
         }
@@ -345,8 +356,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Bet added successfully:', newBet);
 
             // --- Refresh data after successful bet ---
-            // Fetch all bets again to update the grid correctly (handles accumulation)
-            await fetchBets();
+            // Fetch bets for the *current* selection to update the grid
+            await fetchBetsForCurrentSelection();
             // Fetch the summary again to update totals
             await updateCustomerSummary();
 
@@ -377,15 +388,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Focus logic: Move from number/digit input to amount input on entry
     numberInput.addEventListener('input', () => {
-        if (numberInput.value.trim()) {
+        const value = numberInput.value.trim();
+        if (value) {
             singleDigitInput.value = ''; // Clear the other input
-            amountInput.focus();
+            // Only focus amount if 2 digits are entered
+            if (value.length >= 2) {
+                 // Optional: truncate to 2 digits if needed
+                 if (value.length > 2) numberInput.value = value.substring(0, 2);
+                 amountInput.focus();
+            }
         }
     });
      singleDigitInput.addEventListener('input', () => {
-        if (singleDigitInput.value.trim()) {
+        const value = singleDigitInput.value.trim();
+        if (value) {
              numberInput.value = ''; // Clear the other input
-            amountInput.focus();
+             // Optional: truncate to 1 digit if needed
+             if (value.length > 1) singleDigitInput.value = value.substring(0, 1);
+             // Focus amount immediately for single digit
+             amountInput.focus();
         }
     });
 
@@ -400,7 +421,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Listener for summary filter change
     summaryGameFilter.addEventListener('change', () => {
         updateCustomerSummary(); // Update summary when filter changes
+        // Also fetch bets for the selected customer/game combination when summary filter changes
+        // Note: The summary filter *is* the game filter in this UI
+        fetchBetsForCurrentSelection();
     });
+
+    // Add listeners for game and customer selection changes
+    selectGameDropdown.addEventListener('change', fetchBetsForCurrentSelection);
+    selectCustomerDropdown.addEventListener('change', fetchBetsForCurrentSelection);
+
 
     // Placeholder for delete buttons (functionality not implemented yet)
     document.querySelectorAll('.delete-btn, #delete-all-btn').forEach(btn => {
@@ -416,8 +445,9 @@ document.addEventListener('DOMContentLoaded', () => {
         populateBettingGrid(); // Create the grid structure (initially empty)
         await fetchGames();       // Fetch games for dropdowns
         await fetchCustomers();   // Fetch customers for dropdown
-        await fetchBets();        // Fetch initial bets to populate grid
-        await updateCustomerSummary(); // Fetch initial summary
+        // Don't fetch all bets initially, wait for selection
+        // await fetchBets(); // Remove initial fetch of all bets
+        await updateCustomerSummary(); // Fetch initial summary (defaults to 'all' games)
         console.log('App initialized.');
     }
 
