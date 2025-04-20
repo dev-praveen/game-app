@@ -178,6 +178,20 @@ th {
     height: 30px;   /* Reduced height */
     padding: 5px;   /* Reduced padding */
     font-size: 0.85em; /* Slightly smaller font */
+    position: relative; /* For absolute positioning of the number */
+}
+
+#betting-grid td .cell-number {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.7em;
+    color: #666;
+}
+
+#betting-grid td .cell-amount {
+    display: block;
+    margin-top: 2px;
 }
 
 #betting-grid thead th:first-child,
@@ -201,6 +215,14 @@ th {
 
 .summary-controls select {
     max-width: 180px; /* Adjust width for summary selects */
+}
+
+.date-picker {
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    margin-right: 10px;
 }
 
 #customer-summary td:last-child,

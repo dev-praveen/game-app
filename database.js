@@ -47,6 +47,7 @@ function setupDatabase() {
             bet_type TEXT NOT NULL CHECK(bet_type IN ('SD', 'DD')),
             number TEXT NOT NULL,
             amount REAL NOT NULL,
+            bet_date DATE DEFAULT CURRENT_DATE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE,
             FOREIGN KEY (game_id) REFERENCES games (id) ON DELETE CASCADE
@@ -106,16 +107,16 @@ function getAllCustomers() {
 }
 
 // Function to add a new bet
-function addBet({ customerId, gameId, betType, number, amount }) {
-     // Basic validation (more robust validation might be needed)
+function addBet({ customerId, gameId, betType, number, amount, betDate }) {
+    // Basic validation (more robust validation might be needed)
     if (!customerId || !gameId || !betType || !number || amount == null || amount <= 0) {
         throw new Error("Invalid bet data provided");
     }
     const stmt = db.prepare(`
-        INSERT INTO bets (customer_id, game_id, bet_type, number, amount)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO bets (customer_id, game_id, bet_type, number, amount, bet_date)
+        VALUES (?, ?, ?, ?, ?, ?)
     `);
-    const info = stmt.run(customerId, gameId, betType, number, amount);
+    const info = stmt.run(customerId, gameId, betType, number, amount, betDate || new Date().toISOString().split('T')[0]);
     return getBetById(info.lastInsertRowid);
 }
 
@@ -158,7 +159,7 @@ function getAllBets(filters = {}) {
 // Function to delete bets based on filters
 function deleteBets(filters = {}) {
     // Allow deleting ALL bets if both filters are 'all'
-    if (filters.gameId === 'all' && filters.customerId === 'all') {
+    if (filters.gameId === 'all' && filters.customerId === 'all' && !filters.date) {
         console.warn("Executing DELETE for ALL bets!");
         // Begin a transaction to ensure data consistency
         const transaction = db.transaction(() => {
@@ -195,6 +196,10 @@ function deleteBets(filters = {}) {
         conditions.push('game_id = ?');
         params.push(filters.gameId);
     }
+    if (filters.date) {
+        conditions.push('date(bet_date) = date(?)');
+        params.push(filters.date);
+    }
 
     if (conditions.length > 0) {
         sql += ' WHERE ' + conditions.join(' AND ');
@@ -208,8 +213,8 @@ function deleteBets(filters = {}) {
 }
 
 // Function to calculate customer summary
-function getCustomerSummary(gameId = 'all', customerId = 'all') { // Add customerId filter
-     let sql = `
+function getCustomerSummary(gameId = 'all', customerId = 'all', date = null) { // Add customerId filter
+    let sql = `
         SELECT
             c.id as customer_id,
             c.name as customer_name,
@@ -224,12 +229,16 @@ function getCustomerSummary(gameId = 'all', customerId = 'all') { // Add custome
         conditions.push('b.game_id = ?');
         params.push(gameId);
     }
-     if (customerId && customerId !== 'all') { // Add customer condition
+    if (customerId && customerId !== 'all') { // Add customer condition
         conditions.push('b.customer_id = ?');
         params.push(customerId);
     }
+    if (date) {
+        conditions.push('date(b.bet_date) = date(?)');
+        params.push(date);
+    }
 
-     if (conditions.length > 0) {
+    if (conditions.length > 0) {
         sql += ' WHERE ' + conditions.join(' AND ');
     }
 
@@ -241,7 +250,6 @@ function getCustomerSummary(gameId = 'all', customerId = 'all') { // Add custome
     const stmt = db.prepare(sql);
     return stmt.all(...params);
 }
-
 
 // Export functions to be used by the server
 module.exports = {
