@@ -13,7 +13,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "build": "pkg . --output dist/game-app && copy game_bets.db dist\\",
+    "build": "pkg . --output dist/game-app && node init-db.js dist/game_bets.db",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
