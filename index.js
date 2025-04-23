@@ -47,6 +47,23 @@ app.post('/api/games', (req, res) => {
     }
 });
 
+// DELETE a specific game
+app.delete('/api/games/:id', (req, res) => {
+    const { id } = req.params;
+    try {
+        const changes = db.deleteGame(id);
+        if (changes > 0) {
+            res.status(200).json({ message: `Game (ID: ${id}) and associated bets deleted successfully.` });
+        } else {
+            res.status(404).json({ message: `Game with ID ${id} not found.` });
+        }
+    } catch (error) {
+        console.error(`Error deleting game ID ${id}:`, error);
+        res.status(500).json({ message: "Failed to delete game" });
+    }
+});
+
+
 // Customers API
 app.get('/api/customers', (req, res) => {
     try {
@@ -74,6 +91,23 @@ app.post('/api/customers', (req, res) => {
         res.status(500).json({ message: "Failed to add customer" });
     }
 });
+
+// DELETE a specific customer
+app.delete('/api/customers/:id', (req, res) => {
+    const { id } = req.params;
+    try {
+        const changes = db.deleteCustomer(id);
+        if (changes > 0) {
+            res.status(200).json({ message: `Customer (ID: ${id}) and associated bets deleted successfully.` });
+        } else {
+            res.status(404).json({ message: `Customer with ID ${id} not found.` });
+        }
+    } catch (error) {
+        console.error(`Error deleting customer ID ${id}:`, error);
+        res.status(500).json({ message: "Failed to delete customer" });
+    }
+});
+
 
 // Bets API
 app.get('/api/bets', (req, res) => {

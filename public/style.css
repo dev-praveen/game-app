@@ -93,10 +93,19 @@ button {
     padding: 8px 12px; /* Smaller padding for icon button */
     font-size: 1.1rem; /* Slightly larger icon */
     line-height: 1; /* Ensure icon is centered vertically */
+    margin-left: 10px; /* Add space next to the dropdown */
 }
 
 .delete-btn:hover {
      background-color: #c82333;
+}
+
+.delete-btn:disabled,
+button[disabled].delete-btn { /* Increase specificity */
+    background-color: #6c757d !important; /* Grey background when disabled */
+    opacity: 0.65 !important;             /* Make it look faded */
+    cursor: not-allowed !important;       /* Indicate it's not clickable */
+    color: #ccc !important;               /* Lighter text color */
 }
 
 /* Removed .delete-all-btn styles */
