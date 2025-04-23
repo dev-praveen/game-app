@@ -267,6 +267,46 @@ function getCustomerSummary(gameId = 'all', customerId = 'all', date = null) { /
     return stmt.all(...params);
 }
 
+// Function to get grid bets with filters
+function getGridBets(filters = {}) {
+    let sql = `
+        SELECT b.bet_type, b.number, b.amount
+        FROM bets b
+        JOIN games g ON b.game_id = g.id
+        JOIN customers c ON b.customer_id = c.id
+        WHERE 1=1
+    `;
+    const params = [];
+
+    if (filters.date) {
+        sql += ` AND DATE(b.bet_date) = DATE(?)`;
+        params.push(filters.date);
+    }
+    if (filters.gameId && filters.gameId !== 'all') {
+        sql += ` AND b.game_id = ?`;
+        params.push(filters.gameId);
+    }
+    if (filters.customerId && filters.customerId !== 'all') {
+        sql += ` AND b.customer_id = ?`;
+        params.push(filters.customerId);
+    }
+
+    console.log('Executing grid query:', sql, params);
+    const stmt = db.prepare(sql);
+    return stmt.all(...params);
+}
+
+// Function to execute a query and return all results
+function all(query, params) {
+    try {
+        const stmt = db.prepare(query);
+        return stmt.all(...params);
+    } catch (error) {
+        console.error('Database error:', error);
+        throw error;
+    }
+}
+
 // Export functions to be used by the server
 module.exports = {
     addGame,
@@ -279,6 +319,8 @@ module.exports = {
     getAllBets,
     deleteBets, // Export deleteBets
     getCustomerSummary,
+    getGridBets, // Export getGridBets
+    all, // Export the all function
     // Export db instance if direct access is needed elsewhere (use with caution)
     // db
 };

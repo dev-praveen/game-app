@@ -168,6 +168,22 @@ app.delete('/api/bets', (req, res) => {
     }
 });
 
+// Add new endpoint for filtered grid data
+app.post('/api/bets/grid', async (req, res) => {
+    const { date, game, customer } = req.body;
+    try {
+        const bets = db.getGridBets({
+            date,
+            gameId: game,
+            customerId: customer
+        });
+        res.json(bets);
+    } catch (error) {
+        console.error('Error fetching grid data:', error);
+        res.status(500).json({ error: 'Failed to fetch grid data' });
+    }
+});
+
 // Summary API
 app.get('/api/summary', (req, res) => {
     const { gameId, customerId, date } = req.query; // e.g., ?gameId=1&customerId=2&date=2023-01-01

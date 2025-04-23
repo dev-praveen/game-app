@@ -64,6 +64,18 @@
     </div>
 
     <div class="betting-grid-section">
+        <!-- Add filters for betting grid -->
+        <div class="grid-controls">
+            <input type="date" id="grid-date-filter" class="date-picker">
+            <select id="grid-game-filter">
+                <option value="all">All Games</option>
+                <!-- Game options for filtering -->
+            </select>
+            <select id="grid-customer-filter">
+                <option value="all">All Customers</option>
+                <!-- Customer options for filtering -->
+            </select>
+        </div>
         <!-- Betting grid will be generated here -->
         <table id="betting-grid">
             <thead>

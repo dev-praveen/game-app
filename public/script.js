@@ -30,6 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const summaryTotalCell = document.getElementById('summary-total');
     const summaryDateFilter = document.getElementById('summary-date-filter'); // Date picker
 
+    // Grid Filters
+    const gridDateFilter = document.getElementById('grid-date-filter');
+    const gridGameFilter = document.getElementById('grid-game-filter');
+    const gridCustomerFilter = document.getElementById('grid-customer-filter');
+
     // Modal Elements
     const confirmationModal = document.getElementById('confirmation-modal');
     const modalMessage = document.getElementById('modal-message');
@@ -188,6 +193,57 @@ document.addEventListener('DOMContentLoaded', () => {
         // Populate Grid with Bet Data
         console.log("Populating grid with bets:", bets);
         bets.forEach(bet => {
+            const cellId = bet.bet_type === 'SD'
+                ? `grid-sd-${bet.number}`
+                : `grid-dd-${bet.number.padStart(2, '0')}`;
+            const cell = document.getElementById(cellId);
+            if (cell) {
+                // Show the number only for DD bets
+                if (bet.bet_type === 'DD') {
+                    const numberSpan = cell.querySelector('.cell-number');
+                    numberSpan.textContent = bet.number;
+                }
+                
+                const amountSpan = cell.querySelector('.cell-amount');
+                const currentAmount = parseFloat(amountSpan.textContent) || 0;
+                amountSpan.textContent = currentAmount + bet.amount;
+            } else {
+                console.warn(`Cell with ID ${cellId} not found for bet:`, bet);
+            }
+        });
+        console.log("Betting grid populated.");
+    }
+
+    // Separate function to populate grid with specific bets
+    function populateBettingGridWithData(gridBets) {
+        bettingGridBody.innerHTML = '';
+
+        // SD Row (Single Digit)
+        const sdRow = bettingGridBody.insertRow();
+        const sdHeaderCell = sdRow.insertCell();
+        sdHeaderCell.outerHTML = '<th>SD</th>';
+        for (let i = 0; i < 10; i++) {
+            const cell = sdRow.insertCell();
+            cell.id = `grid-sd-${i}`;
+            cell.innerHTML = `<span class="cell-amount"></span>`; // No number display for SD
+        }
+
+        // DD Rows (Double Digit 00-99)
+        for (let i = 0; i < 10; i++) {
+            const row = bettingGridBody.insertRow();
+            const headerCell = row.insertCell();
+            headerCell.outerHTML = `<th>${i}</th>`;
+            for (let j = 0; j < 10; j++) {
+                const cell = row.insertCell();
+                const number = `${i}${j}`;
+                cell.id = `grid-dd-${number}`;
+                cell.innerHTML = `<span class="cell-number"></span><span class="cell-amount"></span>`;
+            }
+        }
+
+        // Populate Grid with Bet Data
+        console.log("Populating grid with bets:", gridBets);
+        gridBets.forEach(bet => {
             const cellId = bet.bet_type === 'SD'
                 ? `grid-sd-${bet.number}`
                 : `grid-dd-${bet.number.padStart(2, '0')}`;
@@ -383,10 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // --- Simplified Modal Listener Logic ---
-        // Define the action to take on confirmation *before* showing the modal
         const confirmAction = async () => {
-            // Remove listeners immediately to prevent multiple clicks
             modalConfirmBtn.removeEventListener('click', confirmAction);
             modalCancelBtn.removeEventListener('click', cancelAction);
             hideModal();
@@ -407,22 +460,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Show success modal instead of alert
                 showSuccessModal('delete-success-modal', result.message || 'Bets deleted successfully.');
 
-                // Refresh all data after successful deletion
-                await Promise.all([
-                    fetchGames(),       // Refresh games dropdown
-                    fetchCustomers(),   // Refresh customers dropdown
-                    fetchBetsForCurrentSelection(), // Refresh grid based on main selection
-                    updateCustomerSummary() // Refresh summary based on summary filters
-                ]);
-
-                // Clear selections
-                selectGameDropdown.value = '';
-                selectCustomerDropdown.value = '';
-
-                // Clear betting inputs
-                numberInput.value = '';
-                singleDigitInput.value = '';
-                amountInput.value = '';
+                // Update the grid with current filters
+                await updateBettingGrid();
+                
+                // Update customer summary
+                await updateCustomerSummary();
 
             } catch (error) {
                 console.error("Error deleting bets:", error);
@@ -431,18 +473,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const cancelAction = () => {
-            // Remove listeners immediately
             modalConfirmBtn.removeEventListener('click', confirmAction);
             modalCancelBtn.removeEventListener('click', cancelAction);
             hideModal();
             console.log("Delete cancelled.");
         };
 
-        // Add the listeners
         modalConfirmBtn.addEventListener('click', confirmAction);
         modalCancelBtn.addEventListener('click', cancelAction);
-
-        // Now show the modal
         showModal(confirmMsg);
     }
 
@@ -601,7 +639,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showModal(confirmMsg);
     }
 
-
     // Function to handle adding a new bet
     async function handleAddBet() {
         const gameId = selectGameDropdown.value;
@@ -649,13 +686,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const betData = {
             gameId,
             customerId,
-            betType, // 'SD' or 'DD'
+            betType,
             number: numberValue,
             amount,
-            betDate: summaryDateFilter.value // Include the selected date
+            betDate: summaryDateFilter.value
         };
-
-        console.log('Adding bet:', betData);
 
         try {
             const response = await fetch('/api/bets', {
@@ -670,21 +705,96 @@ document.addEventListener('DOMContentLoaded', () => {
             const newBet = await response.json();
             console.log('Bet added successfully:', newBet);
 
-            // --- Refresh data after successful bet ---
-            // Fetch bets for the *current* selection to update the grid
-            await fetchBetsForCurrentSelection();
-            // Fetch the summary again to update totals
+            // Update grid based on its own filters
+            await updateBettingGrid();
+            // Update customer summary
             await updateCustomerSummary();
 
             // Clear inputs and refocus
             numberInput.value = '';
             singleDigitInput.value = '';
             amountInput.value = '';
-            lastFocusedNumberInput.focus(); // Focus back on the last used number input
+            lastFocusedNumberInput.focus();
 
         } catch (error) {
             console.error('Error adding bet:', error);
             alert(`Could not add bet: ${error.message}`);
+        }
+    }
+
+    // Function to update the betting grid based on filters
+    async function updateBettingGrid() {
+        const selectedDate = gridDateFilter.value;
+        const selectedGame = gridGameFilter.value;
+        const selectedCustomer = gridCustomerFilter.value;
+
+        try {
+            const response = await fetch('/api/bets/grid', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    date: selectedDate,
+                    game: selectedGame,
+                    customer: selectedCustomer
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch betting grid data');
+            }
+
+            const data = await response.json();
+            // Don't update the global bets array, create a separate gridBets array
+            const gridBets = data;
+            // Create a separate function to populate grid with specific bets
+            populateBettingGridWithData(gridBets);
+        } catch (error) {
+            console.error('Error updating betting grid:', error);
+            populateBettingGridWithData([]); // Clear the grid on error
+        }
+    }
+
+    // Function to populate dropdowns including grid filters
+    async function populateDropdowns() {
+        try {
+            // Populate game and customer dropdowns
+            populateGameDropdowns();
+            populateCustomerDropdown();
+
+            // Populate grid filters
+            const gridGameFilter = document.getElementById('grid-game-filter');
+            const gridCustomerFilter = document.getElementById('grid-customer-filter');
+            
+            // Clear existing options except "All" option
+            while (gridGameFilter.options.length > 1) gridGameFilter.remove(1);
+            while (gridCustomerFilter.options.length > 1) gridCustomerFilter.remove(1);
+
+            // Add games to grid filter
+            games.forEach(game => {
+                const option = document.createElement('option');
+                option.value = game.id; // Changed to use ID
+                option.textContent = game.name;
+                gridGameFilter.appendChild(option);
+            });
+
+            // Add customers to grid filter
+            customers.forEach(customer => {
+                const option = document.createElement('option');
+                option.value = customer.id; // Changed to use ID
+                option.textContent = customer.name;
+                gridCustomerFilter.appendChild(option);
+            });
+
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            gridDateFilter.value = today;
+
+            // Initial grid update
+            updateBettingGrid();
+        } catch (error) {
+            console.error('Error populating dropdowns:', error);
         }
     }
 
@@ -742,18 +852,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add listeners for game and customer selection changes
     selectGameDropdown.addEventListener('change', () => {
-        fetchBetsForCurrentSelection();
-        // Enable/disable delete button based on selection
+        // Only enable/disable delete button based on selection
         deleteGameBtn.disabled = !selectGameDropdown.value;
     });
     selectCustomerDropdown.addEventListener('change', () => {
-        fetchBetsForCurrentSelection();
-        // Enable/disable delete button based on selection
+        // Only enable/disable delete button based on selection
         deleteCustomerBtn.disabled = !selectCustomerDropdown.value;
     });
 
     // Listener for the new delete summary button
     deleteSummaryBtn.addEventListener('click', handleSummaryDelete);
+
+    // Add listeners for grid filters
+    gridDateFilter.addEventListener('change', updateBettingGrid);
+    gridGameFilter.addEventListener('change', updateBettingGrid);
+    gridCustomerFilter.addEventListener('change', updateBettingGrid);
 
     // Listener to close modal if clicking outside the content
     window.addEventListener('click', (event) => {
@@ -768,11 +881,8 @@ document.addEventListener('DOMContentLoaded', () => {
         populateBettingGrid(); // Create the grid structure (initially empty)
         await fetchGames();       // Fetch games for dropdowns
         await fetchCustomers();   // Fetch customers for dropdown
-        // Don't fetch all bets initially, wait for selection
-        // await fetchBets(); // Remove initial fetch of all bets
+        await populateDropdowns(); // Populate all dropdowns including grid filters
         await updateCustomerSummary(); // Fetch initial summary (defaults to 'all' games)
-
-        // Logic moved to populate functions and change handlers
 
         console.log('App initialized.');
     }
