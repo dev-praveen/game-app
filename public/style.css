@@ -100,6 +100,14 @@ button {
      background-color: #c82333;
 }
 
+.delete-btn:disabled,
+button[disabled].delete-btn { /* Increase specificity */
+    background-color: #6c757d !important; /* Grey background when disabled */
+    opacity: 0.65 !important;             /* Make it look faded */
+    cursor: not-allowed !important;       /* Indicate it's not clickable */
+    color: #ccc !important;               /* Lighter text color */
+}
+
 /* Removed .delete-all-btn styles */
 
 .number-entry-section,

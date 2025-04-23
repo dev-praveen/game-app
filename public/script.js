@@ -111,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear existing options (except the default)
         selectGameDropdown.innerHTML = '<option value="">Select a game</option>';
         summaryGameFilter.innerHTML = '<option value="all">All Games</option>';
+        deleteGameBtn.disabled = true; // Disable button immediately after clearing
 
         games.forEach(game => {
             const option1 = document.createElement('option');
@@ -123,6 +124,8 @@ document.addEventListener('DOMContentLoaded', () => {
             option2.textContent = game.name;
             summaryGameFilter.appendChild(option2);
         });
+        // Ensure button is disabled after population if default option is selected
+        deleteGameBtn.disabled = !selectGameDropdown.value;
     }
 
     // Function to populate customer dropdown
@@ -130,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear existing options (except the default)
         selectCustomerDropdown.innerHTML = '<option value="">Select a customer</option>';
         summaryCustomerFilter.innerHTML = '<option value="all">All Customers</option>';
+        deleteCustomerBtn.disabled = true; // Disable button immediately after clearing
 
         // Create an array for summary filter options to avoid duplicates
         const summaryOptions = new Set();
@@ -150,6 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 summaryCustomerFilter.appendChild(summaryOption);
             }
         });
+        // Ensure button is disabled after population if default option is selected
+        deleteCustomerBtn.disabled = !selectCustomerDropdown.value;
     }
 
     // Function to generate the betting grid structure AND populate it
@@ -765,6 +771,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Don't fetch all bets initially, wait for selection
         // await fetchBets(); // Remove initial fetch of all bets
         await updateCustomerSummary(); // Fetch initial summary (defaults to 'all' games)
+
+        // Logic moved to populate functions and change handlers
+
         console.log('App initialized.');
     }
 
