@@ -4,13 +4,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameNameInput = document.getElementById('game-name');
     const addGameBtn = document.getElementById('add-game-btn');
     const selectGameDropdown = document.getElementById('select-game');
-    // const deleteGameBtn = selectGameDropdown.nextElementSibling; // Assuming delete btn is next sibling
+    const deleteGameBtn = document.getElementById('delete-game-btn');
 
     // Customer Management
     const customerNameInput = document.getElementById('customer-name');
     const addCustomerBtn = document.getElementById('add-customer-btn');
     const selectCustomerDropdown = document.getElementById('select-customer');
-    // const deleteCustomerBtn = selectCustomerDropdown.nextElementSibling; // Assuming delete btn is next sibling
+    const deleteCustomerBtn = document.getElementById('delete-customer-btn');
 
     // Number Entry
     const numberInput = document.getElementById('number-input');
@@ -500,6 +500,102 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Function to handle deleting a game
+    async function handleDeleteGame() {
+        const gameId = selectGameDropdown.value;
+        if (!gameId) return; // Should not happen if button is enabled correctly
+
+        const gameName = games.find(g => g.id == gameId)?.name || `Game ID ${gameId}`;
+        const confirmMsg = `Are you sure you want to delete the game "${gameName}"? This might also delete associated bets.`;
+
+        const confirmAction = async () => {
+            modalConfirmBtn.removeEventListener('click', confirmAction);
+            modalCancelBtn.removeEventListener('click', cancelAction);
+            hideModal();
+            console.log(`Proceeding with delete for game ID: ${gameId}`);
+
+            try {
+                const response = await fetch(`/api/games/${gameId}`, { method: 'DELETE' });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to delete game');
+                }
+
+                showSuccessModal('delete-success-modal', result.message || 'Game deleted successfully.');
+                await fetchGames(); // Refresh game dropdowns
+                // Optionally clear other related data if needed
+                selectGameDropdown.value = ''; // Reset dropdown
+                deleteGameBtn.disabled = true; // Disable button again
+                await fetchBetsForCurrentSelection(); // Refresh grid if selection changed
+                await updateCustomerSummary(); // Refresh summary
+
+            } catch (error) {
+                console.error("Error deleting game:", error);
+                alert(`Could not delete game: ${error.message}`);
+            }
+        };
+
+        const cancelAction = () => {
+            modalConfirmBtn.removeEventListener('click', confirmAction);
+            modalCancelBtn.removeEventListener('click', cancelAction);
+            hideModal();
+            console.log("Game delete cancelled.");
+        };
+
+        modalConfirmBtn.addEventListener('click', confirmAction);
+        modalCancelBtn.addEventListener('click', cancelAction);
+        showModal(confirmMsg);
+    }
+
+    // Function to handle deleting a customer
+    async function handleDeleteCustomer() {
+        const customerId = selectCustomerDropdown.value;
+        if (!customerId) return; // Should not happen
+
+        const customerName = customers.find(c => c.id == customerId)?.name || `Customer ID ${customerId}`;
+        const confirmMsg = `Are you sure you want to delete the customer "${customerName}"? This might also delete associated bets.`;
+
+        const confirmAction = async () => {
+            modalConfirmBtn.removeEventListener('click', confirmAction);
+            modalCancelBtn.removeEventListener('click', cancelAction);
+            hideModal();
+            console.log(`Proceeding with delete for customer ID: ${customerId}`);
+
+            try {
+                const response = await fetch(`/api/customers/${customerId}`, { method: 'DELETE' });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to delete customer');
+                }
+
+                showSuccessModal('delete-success-modal', result.message || 'Customer deleted successfully.');
+                await fetchCustomers(); // Refresh customer dropdowns
+                selectCustomerDropdown.value = ''; // Reset dropdown
+                deleteCustomerBtn.disabled = true; // Disable button again
+                await fetchBetsForCurrentSelection(); // Refresh grid if selection changed
+                await updateCustomerSummary(); // Refresh summary
+
+            } catch (error) {
+                console.error("Error deleting customer:", error);
+                alert(`Could not delete customer: ${error.message}`);
+            }
+        };
+
+        const cancelAction = () => {
+            modalConfirmBtn.removeEventListener('click', confirmAction);
+            modalCancelBtn.removeEventListener('click', cancelAction);
+            hideModal();
+            console.log("Customer delete cancelled.");
+        };
+
+        modalConfirmBtn.addEventListener('click', confirmAction);
+        modalCancelBtn.addEventListener('click', cancelAction);
+        showModal(confirmMsg);
+    }
+
+
     // Function to handle adding a new bet
     async function handleAddBet() {
         const gameId = selectGameDropdown.value;
@@ -588,7 +684,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Event Listeners ---
     addGameBtn.addEventListener('click', handleAddGame);
+    deleteGameBtn.addEventListener('click', handleDeleteGame); // Add listener for game delete
     addCustomerBtn.addEventListener('click', handleAddCustomer);
+    deleteCustomerBtn.addEventListener('click', handleDeleteCustomer); // Add listener for customer delete
     addBetBtn.addEventListener('click', handleAddBet);
 
     // Add Enter key listeners for convenience
@@ -636,9 +734,17 @@ document.addEventListener('DOMContentLoaded', () => {
     summaryCustomerFilter.addEventListener('change', updateCustomerSummary);
     summaryDateFilter.addEventListener('change', updateCustomerSummary);
 
-    // Add listeners for game and customer selection changes (for the main betting grid)
-    selectGameDropdown.addEventListener('change', fetchBetsForCurrentSelection);
-    selectCustomerDropdown.addEventListener('change', fetchBetsForCurrentSelection);
+    // Add listeners for game and customer selection changes
+    selectGameDropdown.addEventListener('change', () => {
+        fetchBetsForCurrentSelection();
+        // Enable/disable delete button based on selection
+        deleteGameBtn.disabled = !selectGameDropdown.value;
+    });
+    selectCustomerDropdown.addEventListener('change', () => {
+        fetchBetsForCurrentSelection();
+        // Enable/disable delete button based on selection
+        deleteCustomerBtn.disabled = !selectCustomerDropdown.value;
+    });
 
     // Listener for the new delete summary button
     deleteSummaryBtn.addEventListener('click', handleSummaryDelete);

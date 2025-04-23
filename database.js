@@ -87,6 +87,14 @@ function getAllGames() {
     return stmt.all();
 }
 
+// Function to delete a game (associated bets are deleted by CASCADE)
+function deleteGame(id) {
+    const stmt = db.prepare('DELETE FROM games WHERE id = ?');
+    const info = stmt.run(id);
+    console.log(`Deleted game ID ${id}, changes: ${info.changes}`);
+    return info.changes; // Returns the number of rows deleted (0 or 1)
+}
+
 // Function to add a new customer
 function addCustomer(name) {
     const stmt = db.prepare('INSERT INTO customers (name) VALUES (?)');
@@ -104,6 +112,14 @@ function getCustomerById(id) {
 function getAllCustomers() {
     const stmt = db.prepare('SELECT * FROM customers ORDER BY name');
     return stmt.all();
+}
+
+// Function to delete a customer (associated bets are deleted by CASCADE)
+function deleteCustomer(id) {
+    const stmt = db.prepare('DELETE FROM customers WHERE id = ?');
+    const info = stmt.run(id);
+    console.log(`Deleted customer ID ${id}, changes: ${info.changes}`);
+    return info.changes; // Returns the number of rows deleted (0 or 1)
 }
 
 // Function to add a new bet
@@ -255,8 +271,10 @@ function getCustomerSummary(gameId = 'all', customerId = 'all', date = null) { /
 module.exports = {
     addGame,
     getAllGames,
+    deleteGame, // Export deleteGame
     addCustomer,
     getAllCustomers,
+    deleteCustomer, // Export deleteCustomer
     addBet,
     getAllBets,
     deleteBets, // Export deleteBets
