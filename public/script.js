@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const gridDateFilter = document.getElementById('grid-date-filter');
     const gridGameFilter = document.getElementById('grid-game-filter');
     const gridCustomerFilter = document.getElementById('grid-customer-filter');
+    const gridDeleteAllBtn = document.getElementById('grid-delete-all-btn'); // Grid delete all button
 
     // Modal Elements
     const confirmationModal = document.getElementById('confirmation-modal');
@@ -798,6 +799,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Function to handle grid delete all
+    async function handleGridDeleteAll() {
+        const confirmMsg = 'Are you sure you want to delete ALL bets, customers, and games? This action cannot be undone.';
+
+        const confirmAction = async () => {
+            modalConfirmBtn.removeEventListener('click', confirmAction);
+            modalCancelBtn.removeEventListener('click', cancelAction);
+            hideModal();
+
+            try {
+                // Send delete request with all=true to indicate complete deletion
+                const response = await fetch('/api/bets?gameId=all&customerId=all', {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to delete data');
+                }
+
+                showSuccessModal('delete-success-modal', 'All data has been deleted successfully.');
+
+                // Reset all dropdowns and refresh data
+                await fetchGames();
+                await fetchCustomers();
+                await populateDropdowns();
+                await updateCustomerSummary();
+                await updateBettingGrid();
+
+                // Reset main selections
+                selectGameDropdown.value = '';
+                selectCustomerDropdown.value = '';
+                deleteGameBtn.disabled = true;
+                deleteCustomerBtn.disabled = true;
+
+            } catch (error) {
+                console.error("Error deleting all data:", error);
+                alert(`Could not delete data: ${error.message}`);
+            }
+        };
+
+        const cancelAction = () => {
+            modalConfirmBtn.removeEventListener('click', confirmAction);
+            modalCancelBtn.removeEventListener('click', cancelAction);
+            hideModal();
+        };
+
+        modalConfirmBtn.addEventListener('click', confirmAction);
+        modalCancelBtn.addEventListener('click', cancelAction);
+        showModal(confirmMsg);
+    }
+
     // --- Event Listeners ---
     addGameBtn.addEventListener('click', handleAddGame);
     deleteGameBtn.addEventListener('click', handleDeleteGame); // Add listener for game delete
@@ -867,6 +921,9 @@ document.addEventListener('DOMContentLoaded', () => {
     gridDateFilter.addEventListener('change', updateBettingGrid);
     gridGameFilter.addEventListener('change', updateBettingGrid);
     gridCustomerFilter.addEventListener('change', updateBettingGrid);
+
+    // Add listener for grid delete all button
+    gridDeleteAllBtn.addEventListener('click', handleGridDeleteAll);
 
     // Listener to close modal if clicking outside the content
     window.addEventListener('click', (event) => {

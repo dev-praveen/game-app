@@ -110,6 +110,23 @@ button[disabled].delete-btn { /* Increase specificity */
 
 /* Removed .delete-all-btn styles */
 
+.grid-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+#grid-delete-all-btn {
+    margin-left: auto; /* Push button to the right end */
+    background-color: #dc3545;
+    padding: 8px 15px;
+}
+
+#grid-delete-all-btn:hover {
+    background-color: #c82333;
+}
+
 .number-entry-section,
 .betting-grid-section,
 .summary-section {
