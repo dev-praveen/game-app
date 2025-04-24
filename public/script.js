@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const singleDigitInput = document.getElementById('single-digit-input');
     const amountInput = document.getElementById('amount-input');
     const addBetBtn = document.getElementById('add-bet-btn');
-    const deleteAllBtn = document.getElementById('delete-all-btn');
 
     // Betting Grid
     const bettingGridBody = document.getElementById('betting-grid').querySelector('tbody');
@@ -27,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const summaryCustomerFilter = document.getElementById('summary-customer-filter'); // New filter
     const deleteSummaryBtn = document.getElementById('delete-summary-btn'); // New delete button
     const customerSummaryBody = document.getElementById('customer-summary').querySelector('tbody');
-    const summaryTotalCell = document.getElementById('summary-total');
     const summaryDateFilter = document.getElementById('summary-date-filter'); // Date picker
 
     // Grid Filters
@@ -47,6 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let customers = [];
     let bets = []; // We might need a more structured way to store bets later
     let lastFocusedNumberInput = numberInput; // Track last used number input
+
+    // Add pagination variables
+    let currentPage = 1;
+    const rowsPerPage = 5;
+    let summaryData = []; // Store all summary data
 
     // Set default date to today
     const today = new Date().toISOString().split('T')[0];
@@ -285,7 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedGameId = summaryGameFilter.value;
         const selectedCustomerId = summaryCustomerFilter.value;
         const date = summaryDateFilter.value || today;
-        console.log(`Fetching summary for gameId: ${selectedGameId}, customerId: ${selectedCustomerId}, date: ${date}`);
 
         const queryParams = new URLSearchParams();
         if (selectedGameId !== 'all') queryParams.append('gameId', selectedGameId);
@@ -295,63 +297,104 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`/api/summary?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch summary');
-            const summaryData = await response.json();
+            summaryData = await response.json(); // Store all data
             console.log("Fetched summary data:", summaryData);
 
-            // Update delete button state based on whether there's data
-            updateDeleteButtonState(summaryData.length > 0);
-
-            // Clear existing summary rows (keep the header)
-            let totalRow = customerSummaryBody.querySelector('tr:last-child');
-            if (totalRow && totalRow.cells[0].textContent !== 'Total') {
-                totalRow = null;
-            }
-            while (customerSummaryBody.firstChild && customerSummaryBody.firstChild !== totalRow) {
-                customerSummaryBody.removeChild(customerSummaryBody.firstChild);
-            }
-            if (totalRow) {
-                totalRow.cells[2].textContent = '₹ 0';
-            }
-
-            let grandTotal = 0;
-            summaryData.forEach(item => {
-                const row = customerSummaryBody.insertBefore(document.createElement('tr'), totalRow);
-                row.insertCell().textContent = item.customer_name;
-                row.insertCell().textContent = item.game_name;
-                const amountCell = row.insertCell();
-                amountCell.textContent = `₹ ${item.total_amount.toFixed(2)}`;
-                amountCell.style.textAlign = 'right';
-                grandTotal += item.total_amount;
-            });
-
-            // Ensure the Total row exists and update it
-            if (!totalRow) {
-                totalRow = customerSummaryBody.insertRow();
-                totalRow.insertCell().textContent = 'Total';
-                totalRow.insertCell(); // Empty cell for game column
-                const totalAmountCell = totalRow.insertCell();
-                totalAmountCell.id = 'summary-total';
-                totalAmountCell.style.fontWeight = 'bold';
-                totalAmountCell.style.borderTop = '2px solid #343a40';
-                totalRow.cells[0].style.borderTop = '2px solid #343a40';
-                totalRow.cells[1].style.borderTop = '2px solid #343a40';
-            }
-            const finalTotalCell = document.getElementById('summary-total');
-            finalTotalCell.textContent = `₹ ${grandTotal.toFixed(2)}`;
-            finalTotalCell.style.textAlign = 'right';
+            // Reset to first page when data changes
+            currentPage = 1;
+            updatePaginationControls();
+            displayCurrentPage();
 
         } catch (error) {
             console.error('Error updating customer summary:', error);
             alert('Could not update customer summary.');
-            customerSummaryBody.innerHTML = '';
-            const totalRow = customerSummaryBody.insertRow();
+            summaryData = [];
+            displayCurrentPage();
+        }
+    }
+
+    // Function to update pagination controls
+    function updatePaginationControls() {
+        const totalPages = Math.ceil(summaryData.length / rowsPerPage);
+        document.getElementById('current-page').textContent = currentPage;
+        document.getElementById('total-pages').textContent = totalPages;
+        
+        const prevBtn = document.getElementById('prev-page');
+        const nextBtn = document.getElementById('next-page');
+        
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+    }
+
+    // Function to display current page
+    function displayCurrentPage() {
+        const startIdx = (currentPage - 1) * rowsPerPage;
+        const endIdx = startIdx + rowsPerPage;
+        const currentPageData = summaryData.slice(startIdx, endIdx);
+
+        // Update delete button state based on whether there's any data
+        updateDeleteButtonState(summaryData.length > 0);
+
+        // Clear existing summary rows (keep the header)
+        let totalRow = customerSummaryBody.querySelector('tr:last-child');
+        if (totalRow && totalRow.cells[0].textContent !== 'Total') {
+            totalRow = null;
+        }
+        while (customerSummaryBody.firstChild && customerSummaryBody.firstChild !== totalRow) {
+            customerSummaryBody.removeChild(customerSummaryBody.firstChild);
+        }
+        if (totalRow) {
+            totalRow.cells[2].textContent = '₹ 0';
+        }
+
+        let grandTotal = 0;
+        currentPageData.forEach(item => {
+            const row = customerSummaryBody.insertBefore(document.createElement('tr'), totalRow);
+            row.insertCell().textContent = item.customer_name;
+            row.insertCell().textContent = item.game_name;
+            const amountCell = row.insertCell();
+            amountCell.textContent = `₹ ${item.total_amount.toFixed(2)}`;
+            amountCell.style.textAlign = 'right';
+            grandTotal += item.total_amount;
+        });
+
+        // Calculate grand total for ALL data, not just current page
+        const totalAmount = summaryData.reduce((sum, item) => sum + item.total_amount, 0);
+
+        // Ensure the Total row exists and update it
+        if (!totalRow) {
+            totalRow = customerSummaryBody.insertRow();
             totalRow.insertCell().textContent = 'Total';
             totalRow.insertCell(); // Empty cell for game column
             const totalAmountCell = totalRow.insertCell();
             totalAmountCell.id = 'summary-total';
-            totalAmountCell.textContent = '₹ 0';
+            totalAmountCell.style.fontWeight = 'bold';
+            totalAmountCell.style.borderTop = '2px solid #343a40';
+            totalRow.cells[0].style.borderTop = '2px solid #343a40';
+            totalRow.cells[1].style.borderTop = '2px solid #343a40';
         }
+        const finalTotalCell = document.getElementById('summary-total');
+        finalTotalCell.textContent = `₹ ${totalAmount.toFixed(2)}`;
+        finalTotalCell.style.textAlign = 'right';
     }
+
+    // Add event listeners for pagination buttons
+    document.getElementById('prev-page').addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePaginationControls();
+            displayCurrentPage();
+        }
+    });
+
+    document.getElementById('next-page').addEventListener('click', () => {
+        const totalPages = Math.ceil(summaryData.length / rowsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePaginationControls();
+            displayCurrentPage();
+        }
+    });
 
     // --- Modal Handling Functions ---
     function showModal(message) {
