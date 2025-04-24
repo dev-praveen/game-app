@@ -282,12 +282,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to fetch and update the customer summary table
     async function updateCustomerSummary() {
-        const selectedGameId = summaryGameFilter.value; // 'all' or a game ID
-        const selectedCustomerId = summaryCustomerFilter.value; // 'all' or a customer ID
+        const selectedGameId = summaryGameFilter.value;
+        const selectedCustomerId = summaryCustomerFilter.value;
         const date = summaryDateFilter.value || today;
         console.log(`Fetching summary for gameId: ${selectedGameId}, customerId: ${selectedCustomerId}, date: ${date}`);
 
-        // Construct query params, only include if not 'all'
         const queryParams = new URLSearchParams();
         if (selectedGameId !== 'all') queryParams.append('gameId', selectedGameId);
         if (selectedCustomerId !== 'all') queryParams.append('customerId', selectedCustomerId);
@@ -303,52 +302,51 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDeleteButtonState(summaryData.length > 0);
 
             // Clear existing summary rows (keep the header)
-            // Find the total row if it exists, otherwise null
             let totalRow = customerSummaryBody.querySelector('tr:last-child');
             if (totalRow && totalRow.cells[0].textContent !== 'Total') {
-                totalRow = null; // It wasn't the total row
+                totalRow = null;
             }
-            // Clear all rows except the potential total row
             while (customerSummaryBody.firstChild && customerSummaryBody.firstChild !== totalRow) {
                 customerSummaryBody.removeChild(customerSummaryBody.firstChild);
             }
-            // If total row exists, clear its amount cell
             if (totalRow) {
-                totalRow.cells[1].textContent = '₹ 0';
+                totalRow.cells[2].textContent = '₹ 0';
             }
 
             let grandTotal = 0;
             summaryData.forEach(item => {
-                // Insert new rows *before* the total row if it exists
                 const row = customerSummaryBody.insertBefore(document.createElement('tr'), totalRow);
                 row.insertCell().textContent = item.customer_name;
+                row.insertCell().textContent = item.game_name;
                 const amountCell = row.insertCell();
-                amountCell.textContent = `₹ ${item.total_amount.toFixed(2)}`; // Format amount
-                amountCell.style.textAlign = 'right'; // Align amount right
+                amountCell.textContent = `₹ ${item.total_amount.toFixed(2)}`;
+                amountCell.style.textAlign = 'right';
                 grandTotal += item.total_amount;
             });
 
             // Ensure the Total row exists and update it
             if (!totalRow) {
-                totalRow = customerSummaryBody.insertRow(); // Add total row if it wasn't there
+                totalRow = customerSummaryBody.insertRow();
                 totalRow.insertCell().textContent = 'Total';
+                totalRow.insertCell(); // Empty cell for game column
                 const totalAmountCell = totalRow.insertCell();
-                totalAmountCell.id = 'summary-total'; // Ensure ID is set
+                totalAmountCell.id = 'summary-total';
                 totalAmountCell.style.fontWeight = 'bold';
                 totalAmountCell.style.borderTop = '2px solid #343a40';
                 totalRow.cells[0].style.borderTop = '2px solid #343a40';
+                totalRow.cells[1].style.borderTop = '2px solid #343a40';
             }
-            const finalTotalCell = document.getElementById('summary-total'); // Get it by ID to be sure
+            const finalTotalCell = document.getElementById('summary-total');
             finalTotalCell.textContent = `₹ ${grandTotal.toFixed(2)}`;
-            finalTotalCell.style.textAlign = 'right'; // Align amount right
+            finalTotalCell.style.textAlign = 'right';
 
         } catch (error) {
             console.error('Error updating customer summary:', error);
             alert('Could not update customer summary.');
-            // Clear summary on error
-            customerSummaryBody.innerHTML = ''; // Clear all rows
-            const totalRow = customerSummaryBody.insertRow(); // Add back total row structure
+            customerSummaryBody.innerHTML = '';
+            const totalRow = customerSummaryBody.insertRow();
             totalRow.insertCell().textContent = 'Total';
+            totalRow.insertCell(); // Empty cell for game column
             const totalAmountCell = totalRow.insertCell();
             totalAmountCell.id = 'summary-total';
             totalAmountCell.textContent = '₹ 0';

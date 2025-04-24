@@ -229,14 +229,16 @@ function deleteBets(filters = {}) {
 }
 
 // Function to calculate customer summary
-function getCustomerSummary(gameId = 'all', customerId = 'all', date = null) { // Add customerId filter
+function getCustomerSummary(gameId = 'all', customerId = 'all', date = null) {
     let sql = `
         SELECT
             c.id as customer_id,
             c.name as customer_name,
+            g.name as game_name,
             SUM(b.amount) as total_amount
         FROM bets b
         JOIN customers c ON b.customer_id = c.id
+        JOIN games g ON b.game_id = g.id
     `;
     const params = [];
     const conditions = [];
@@ -245,7 +247,7 @@ function getCustomerSummary(gameId = 'all', customerId = 'all', date = null) { /
         conditions.push('b.game_id = ?');
         params.push(gameId);
     }
-    if (customerId && customerId !== 'all') { // Add customer condition
+    if (customerId && customerId !== 'all') {
         conditions.push('b.customer_id = ?');
         params.push(customerId);
     }
@@ -259,8 +261,8 @@ function getCustomerSummary(gameId = 'all', customerId = 'all', date = null) { /
     }
 
     sql += `
-        GROUP BY c.id, c.name
-        ORDER BY total_amount DESC, c.name;
+        GROUP BY c.id, c.name, g.id, g.name
+        ORDER BY total_amount DESC, c.name, g.name;
     `;
 
     const stmt = db.prepare(sql);
