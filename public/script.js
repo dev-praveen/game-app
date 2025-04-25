@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Clear existing summary rows (keep the header)
         let totalRow = customerSummaryBody.querySelector('tr:last-child');
-        if (totalRow && totalRow.cells[0].textContent !== 'Total') {
+        if (totalRow && totalRow.cells[0].textContent !== 'Total Amount') {
             totalRow = null;
         }
         while (customerSummaryBody.firstChild && customerSummaryBody.firstChild !== totalRow) {
@@ -357,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.insertCell().textContent = item.customer_name;
             row.insertCell().textContent = item.game_name;
             const amountCell = row.insertCell();
-            amountCell.textContent = `₹ ${item.total_amount.toFixed(2)}`;
+            amountCell.textContent = `${item.total_amount.toFixed(2)}`;
             amountCell.style.textAlign = 'right';
             grandTotal += item.total_amount;
         });
@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Ensure the Total row exists and update it
         if (!totalRow) {
             totalRow = customerSummaryBody.insertRow();
-            totalRow.insertCell().textContent = 'Total';
+            totalRow.insertCell().textContent = 'Total Amount';
             totalRow.insertCell(); // Empty cell for game column
             const totalAmountCell = totalRow.insertCell();
             totalAmountCell.id = 'summary-total';
