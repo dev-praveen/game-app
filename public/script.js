@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to handle downloading summary data as CSV
     function downloadSummaryAsCSV() {
         // Add only column headers with rupee symbol in Total Amount
-        let csvContent = 'Customer,Game,Total Amount (₹)\n';
+        let csvContent = 'Customer,Game,Amount(₹)\n\n';
 
         // Add all data rows (without rupee symbol since it's in the header)
         summaryData.forEach(item => {
@@ -394,15 +394,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add grand total (without rupee symbol)
         const totalAmount = summaryData.reduce((sum, item) => sum + item.total_amount, 0);
-        csvContent += `Total,,${totalAmount.toFixed(2)}\n`;
+        csvContent += `\nTotal Amount =====> ${totalAmount.toFixed(2)}\n`;
 
         // Create blob and download
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         
-        // Create filename with current date
-        const filename = `betting_summary_${new Date().toISOString().split('T')[0]}.csv`;
+        // Use the selected date from the date picker, or today if no date is selected
+        const selectedDate = summaryDateFilter.value || new Date().toISOString().split('T')[0];
+        const filename = `customer_summary_${selectedDate}.csv`;
         
         link.setAttribute('href', url);
         link.setAttribute('download', filename);
