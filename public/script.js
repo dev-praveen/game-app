@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add pagination variables
     let currentPage = 1;
-    const rowsPerPage = 5;
+    const rowsPerPage = 10;
     let summaryData = []; // Store all summary data
 
     // Set default date to today
@@ -269,18 +269,22 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Betting grid populated.");
     }
 
-    // Function to update the delete button state
+    // Function to update the button states
     function updateDeleteButtonState(hasData) {
         const deleteBtn = document.getElementById('delete-summary-btn');
-        if (!hasData) {
-            deleteBtn.disabled = true;
-            deleteBtn.style.opacity = '0.5';
-            deleteBtn.style.cursor = 'not-allowed';
-        } else {
-            deleteBtn.disabled = false;
-            deleteBtn.style.opacity = '1';
-            deleteBtn.style.cursor = 'pointer';
-        }
+        const downloadBtn = document.getElementById('download-summary-btn');
+        
+        [deleteBtn, downloadBtn].forEach(btn => {
+            if (!hasData) {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            } else {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        });
     }
 
     // Function to fetch and update the customer summary table
@@ -377,6 +381,39 @@ document.addEventListener('DOMContentLoaded', () => {
         finalTotalCell.textContent = `₹ ${totalAmount.toFixed(2)}`;
         finalTotalCell.style.textAlign = 'right';
     }
+
+    // Function to handle downloading summary data as CSV
+    function downloadSummaryAsCSV() {
+        // Add only column headers with rupee symbol in Total Amount
+        let csvContent = 'Customer,Game,Total Amount (₹)\n';
+
+        // Add all data rows (without rupee symbol since it's in the header)
+        summaryData.forEach(item => {
+            csvContent += `${item.customer_name},${item.game_name},${item.total_amount.toFixed(2)}\n`;
+        });
+
+        // Add grand total (without rupee symbol)
+        const totalAmount = summaryData.reduce((sum, item) => sum + item.total_amount, 0);
+        csvContent += `Total,,${totalAmount.toFixed(2)}\n`;
+
+        // Create blob and download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        // Create filename with current date
+        const filename = `betting_summary_${new Date().toISOString().split('T')[0]}.csv`;
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Add event listener for download button
+    document.getElementById('download-summary-btn').addEventListener('click', downloadSummaryAsCSV);
 
     // Add event listeners for pagination buttons
     document.getElementById('prev-page').addEventListener('click', () => {

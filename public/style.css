@@ -422,3 +422,22 @@ th {
     font-size: 0.9em;
     color: #666;
 }
+
+.action-btn {
+    background-color: #28a745; /* Green color */
+    color: white; /* White text */
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+    margin-left: 10px;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background-color: #218838; /* Darker green on hover */
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
