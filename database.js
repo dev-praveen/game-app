@@ -298,6 +298,45 @@ function getGridBets(filters = {}) {
     return stmt.all(...params);
 }
 
+// Function to get detailed bet summary
+function getDetailedBetSummary(gameId = 'all', customerId = 'all', date = null) {
+    let sql = `
+        SELECT
+            c.name as customer_name,
+            g.name as game_name,
+            b.bet_type,
+            b.number,
+            b.amount
+        FROM bets b
+        JOIN customers c ON b.customer_id = c.id
+        JOIN games g ON b.game_id = g.id
+    `;
+    const params = [];
+    const conditions = [];
+
+    if (gameId && gameId !== 'all') {
+        conditions.push('b.game_id = ?');
+        params.push(gameId);
+    }
+    if (customerId && customerId !== 'all') {
+        conditions.push('b.customer_id = ?');
+        params.push(customerId);
+    }
+    if (date) {
+        conditions.push('date(b.bet_date) = date(?)');
+        params.push(date);
+    }
+
+    if (conditions.length > 0) {
+        sql += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    sql += ' ORDER BY c.name, g.name, b.bet_type, b.number';
+
+    const stmt = db.prepare(sql);
+    return stmt.all(...params);
+}
+
 // Function to execute a query and return all results
 function all(query, params) {
     try {
@@ -322,6 +361,7 @@ module.exports = {
     deleteBets, // Export deleteBets
     getCustomerSummary,
     getGridBets, // Export getGridBets
+    getDetailedBetSummary,
     all, // Export the all function
     // Export db instance if direct access is needed elsewhere (use with caution)
     // db

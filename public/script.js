@@ -381,34 +381,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Function to handle downloading summary data as CSV
-    function downloadSummaryAsCSV() {
-        // Add only column headers with rupee symbol in Total Amount
-        let csvContent = 'Customer,Game,Amount(₹)\n\n';
+    async function downloadSummaryAsCSV() {
+        const selectedGameId = summaryGameFilter.value;
+        const selectedCustomerId = summaryCustomerFilter.value;
+        const date = summaryDateFilter.value || today;
 
-        // Add all data rows (without rupee symbol since it's in the header)
-        summaryData.forEach(item => {
-            csvContent += `${item.customer_name},${item.game_name},${item.total_amount.toFixed(2)}\n`;
-        });
+        try {
+            // Fetch detailed bet data
+            const queryParams = new URLSearchParams({ gameId: selectedGameId, customerId: selectedCustomerId, date });
+            const detailedResponse = await fetch(`/api/summary/detailed?${queryParams}`);
+            if (!detailedResponse.ok) throw new Error('Failed to fetch detailed summary');
+            const detailedData = await detailedResponse.json();
 
-        // Add grand total (without rupee symbol)
-        const totalAmount = summaryData.reduce((sum, item) => sum + item.total_amount, 0);
-        csvContent += `\nTotal Amount =====> ${totalAmount.toFixed(2)}\n`;
+            // Create CSV content with headers
+            let csvContent = 'Customer,Game,Number,Amount(₹)\n\n';
 
-        // Create blob and download
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        
-        // Use the selected date from the date picker, or today if no date is selected
-        const selectedDate = summaryDateFilter.value || new Date().toISOString().split('T')[0];
-        const filename = `customer_summary_${selectedDate}.csv`;
-        
-        link.setAttribute('href', url);
-        link.setAttribute('download', filename);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            // Add each bet as a separate line
+            detailedData.forEach(bet => {
+                csvContent += `${bet.customer_name},${bet.game_name},${bet.number},${bet.amount.toFixed(2)}\n`;
+            });
+
+            // Calculate and add grand total
+            const totalAmount = detailedData.reduce((sum, bet) => sum + bet.amount, 0);
+            csvContent += `\nTotal Amount =====> ${totalAmount.toFixed(2)}\n`;
+
+            // Create blob and download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            const filename = `customer_summary_${date}.csv`;
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Error downloading summary:', error);
+            showValidationModal('Could not download summary data.');
+        }
     }
 
     // Add event listener for download button

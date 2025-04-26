@@ -197,6 +197,18 @@ app.get('/api/summary', (req, res) => {
     }
 });
 
+// Add new endpoint for detailed bet summary
+app.get('/api/summary/detailed', (req, res) => {
+    const { gameId, customerId, date } = req.query;
+    try {
+        const detailedSummary = db.getDetailedBetSummary(gameId, customerId, date);
+        res.json(detailedSummary);
+    } catch (error) {
+        console.error("Error fetching detailed summary:", error);
+        res.status(500).json({ message: "Failed to fetch detailed summary" });
+    }
+});
+
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
