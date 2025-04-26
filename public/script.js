@@ -88,12 +88,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const gameId = selectGameDropdown.value;
         const customerId = selectCustomerDropdown.value;
 
-        // Only fetch if both a game and customer are selected
         if (!gameId || !customerId) {
             console.log("Game or Customer not selected, clearing bets.");
-            bets = []; // Clear local bets array
-            populateBettingGrid(); // Clear the grid display
-            return; // Don't fetch
+            bets = [];
+            populateBettingGrid();
+            return;
         }
 
         const filters = { gameId, customerId };
@@ -104,14 +103,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error('Failed to fetch bets');
-            bets = await response.json(); // Update the global bets array
+            bets = await response.json();
             console.log("Fetched bets:", bets);
-            populateBettingGrid(); // Populate grid with fetched data
+            populateBettingGrid();
         } catch (error) {
             console.error('Error fetching bets:', error);
-            alert('Could not load bet data for the current selection.');
-            bets = []; // Clear bets on error
-            populateBettingGrid(); // Clear grid display on error
+            showValidationModal('Could not load bet data for the current selection.');
+            bets = [];
+            populateBettingGrid();
         }
     }
 
@@ -301,17 +300,16 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`/api/summary?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch summary');
-            summaryData = await response.json(); // Store all data
+            summaryData = await response.json();
             console.log("Fetched summary data:", summaryData);
 
-            // Reset to first page when data changes
             currentPage = 1;
             updatePaginationControls();
             displayCurrentPage();
 
         } catch (error) {
             console.error('Error updating customer summary:', error);
-            alert('Could not update customer summary.');
+            showValidationModal('Could not update customer summary.');
             summaryData = [];
             displayCurrentPage();
         }
@@ -495,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const date = summaryDateFilter.value;
 
         // Prepare confirmation message - Allow all/all case now
-        let confirmMsg = `Are you sure you want to delete bets?`; // Default start
+        let confirmMsg; // Declare the variable without assigning a value
         if (gameId === 'all' && customerId === 'all' && !date) {
             confirmMsg = `Are you sure you want to delete ALL bets for ALL customers and ALL games? This cannot be undone.`;
         } else if (customerId !== 'all') {
@@ -568,7 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleAddGame() {
         const name = gameNameInput.value.trim();
         if (!name) {
-            alert('Please enter a game name.');
+            showValidationModal('Please enter a game name.');
             return;
         }
         try {
@@ -598,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleAddCustomer() {
         const name = customerNameInput.value.trim();
         if (!name) {
-            alert('Please enter a customer name.');
+            showValidationModal('Please enter a customer name.');
             return;
         }
         try {

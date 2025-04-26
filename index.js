@@ -111,7 +111,7 @@ app.delete('/api/customers/:id', (req, res) => {
 
 // Bets API
 app.get('/api/bets', (req, res) => {
-    // TODO: Add filtering based on query parameters (e.g., ?customerId=1&gameId=2)
+    
     const filters = req.query; // Example: { customerId: '1', gameId: 'all' }
     try {
         const bets = db.getAllBets(filters);
