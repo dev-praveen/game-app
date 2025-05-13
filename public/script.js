@@ -18,6 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const amountInput = document.getElementById('amount-input');
     const addBetBtn = document.getElementById('add-bet-btn');
 
+    // Grid Extract
+    const extractAmountInput = document.getElementById('extract-amount-input');
+    const extractBtn = document.getElementById('extract-btn');
+    const extractOutput = document.getElementById('extract-output');
+
     // Betting Grid
     const bettingGridBody = document.getElementById('betting-grid').querySelector('tbody');
 
@@ -266,6 +271,49 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         console.log("Betting grid populated.");
+    }
+
+    // Function to handle grid amount extraction
+    function handleGridExtract() {
+        const extractAmount = parseFloat(extractAmountInput.value);
+        if (!extractAmount || extractAmount <= 0) {
+            showValidationModal('Please enter a valid positive amount.');
+            return;
+        }
+
+        const gridData = [];
+        // Get all cells
+        const cells = document.querySelectorAll('#betting-grid td');
+        
+        cells.forEach(cell => {
+            const amountSpan = cell.querySelector('.cell-amount');
+            const numberSpan = cell.querySelector('.cell-number');
+            if (!amountSpan) return;
+            
+            const amount = parseFloat(amountSpan.textContent) || 0;
+            const number = numberSpan ? numberSpan.textContent : '';
+            
+            // Only include if amount is greater than extract amount and we have a number
+            if (amount > extractAmount && number) {
+                gridData.push({ 
+                    number: number,
+                    amount: amount - extractAmount
+                });
+            }
+        });
+
+        if (gridData.length === 0) {
+            extractOutput.textContent = 'No amounts found greater than ' + extractAmount;
+            return;
+        }
+
+        // Format the output string and sort by number
+        const formattedData = gridData
+            .sort((a, b) => parseInt(a.number) - parseInt(b.number))
+            .map(item => `${item.number}-${item.amount}`)
+            .join(',');
+
+        extractOutput.textContent = formattedData;
     }
 
     // Function to update the button states
@@ -944,9 +992,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Event Listeners ---
     addGameBtn.addEventListener('click', handleAddGame);
-    deleteGameBtn.addEventListener('click', handleDeleteGame); // Add listener for game delete
+    deleteGameBtn.addEventListener('click', handleDeleteGame);
     addCustomerBtn.addEventListener('click', handleAddCustomer);
-    deleteCustomerBtn.addEventListener('click', handleDeleteCustomer); // Add listener for customer delete
+    deleteCustomerBtn.addEventListener('click', handleDeleteCustomer);
     addBetBtn.addEventListener('click', handleAddBet);
 
     // Add Enter key listeners for convenience
@@ -957,14 +1005,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') handleAddCustomer();
     });
 
-    // Focus logic: Move from number/digit input to amount input on entry
+    // Focus logic for number inputs
     numberInput.addEventListener('input', () => {
         const value = numberInput.value.trim();
         if (value) {
-            singleDigitInput.value = ''; // Clear the other input
-            // Only focus amount if 2 digits are entered
+            singleDigitInput.value = '';
             if (value.length >= 2) {
-                // Optional: truncate to 2 digits if needed
                 if (value.length > 2) numberInput.value = value.substring(0, 2);
                 amountInput.focus();
             }
@@ -973,10 +1019,8 @@ document.addEventListener('DOMContentLoaded', () => {
     singleDigitInput.addEventListener('input', () => {
         const value = singleDigitInput.value.trim();
         if (value) {
-            numberInput.value = ''; // Clear the other input
-            // Optional: truncate to 1 digit if needed
+            numberInput.value = '';
             if (value.length > 1) singleDigitInput.value = value.substring(0, 1);
-            // Focus amount immediately for single digit
             amountInput.focus();
         }
     });
@@ -984,38 +1028,41 @@ document.addEventListener('DOMContentLoaded', () => {
     // Submit bet and refocus on Enter key in amount field
     amountInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            handleAddBet(); // Add the bet
-            // Refocus is handled within handleAddBet after successful submission
+            handleAddBet();
         }
     });
 
-    // Listener for summary filter change
+    // Grid extract event listeners
+    extractBtn.addEventListener('click', handleGridExtract);
+    extractAmountInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleGridExtract();
+        }
+    });
+
+    // Summary filter listeners
     summaryGameFilter.addEventListener('change', updateCustomerSummary);
     summaryCustomerFilter.addEventListener('change', updateCustomerSummary);
     summaryDateFilter.addEventListener('change', updateCustomerSummary);
 
-    // Add listeners for game and customer selection changes
+    // Selection change listeners
     selectGameDropdown.addEventListener('change', () => {
-        // Only enable/disable delete button based on selection
         deleteGameBtn.disabled = !selectGameDropdown.value;
     });
     selectCustomerDropdown.addEventListener('change', () => {
-        // Only enable/disable delete button based on selection
         deleteCustomerBtn.disabled = !selectCustomerDropdown.value;
     });
 
-    // Listener for the new delete summary button
-    deleteSummaryBtn.addEventListener('click', handleSummaryDelete);
-
-    // Add listeners for grid filters
+    // Grid filter listeners
     gridDateFilter.addEventListener('change', updateBettingGrid);
     gridGameFilter.addEventListener('change', updateBettingGrid);
     gridCustomerFilter.addEventListener('change', updateBettingGrid);
 
-    // Add listener for grid delete all button
+    // Other button listeners
+    deleteSummaryBtn.addEventListener('click', handleSummaryDelete);
     gridDeleteAllBtn.addEventListener('click', handleGridDeleteAll);
 
-    // Listener to close modal if clicking outside the content
+    // Modal click outside listener
     window.addEventListener('click', (event) => {
         if (event.target == confirmationModal) {
             hideModal();
